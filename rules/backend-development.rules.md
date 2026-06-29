@@ -13,13 +13,22 @@ If an implementation violates these rules $\rightarrow$ **the task MUST NOT be c
 
 ---
 
-## 1. Core Principles (Binding)
+## 1. Mandatory Research & Planning Phase (Registry-First)
 
-### 1.1 Feature-Driven Architecture
+Before creating any plan (such as `implementation_plan.md`) or performing any codebase analysis/research:
+*   The agent **MUST** read the local Knowledge Registry at `./.agents/knowledges/registry.md` to understand the available technical services and utilities.
+*   Identify which specific utilities (e.g. ORM, Controller, Validation, Permission, Auth) or technical services (e.g. Database, Storage, Email, Queue) are required for the task.
+*   The agent **MUST** open and read those specific knowledge files in `./.agents/knowledges/` **BEFORE** exploring the codebase or proposing any changes. This prevents unnecessary codebase searches and ensures alignment with Skalfa API patterns.
+
+---
+
+## 2. Core Principles (Binding)
+
+### 2.1 Feature-Driven Architecture
 *   Code MUST be organized around features/domains under `app/controllers/` and `app/models/`.
 *   Cross-feature coupling is forbidden unless explicitly designed.
 
-### 1.2 Service Objects (Controller-level & Model-level)
+### 2.2 Service Objects (Controller-level & Model-level)
 *   All business logic MUST live inside **service objects** located in a nested `_services/` folder.
 *   **Controller-level Services**:
     *   Located in `app/controllers/<module>/_services/`.
@@ -31,13 +40,13 @@ If an implementation violates these rules $\rightarrow$ **the task MUST NOT be c
     *   These services MUST be registered/imported and called inside the Model class (e.g. `generateNumber = async () => await BookingService.generateNumber()`).
 
 
-### 1.3 Explicit Backend Behavior
+### 2.3 Explicit Backend Behavior
 *   All backend behavior (validations, authorization checks, database transactions, side effects) MUST be explicit and traceable.
 *   No magic branching, implicit behavior, or hidden state.
 
 ---
 
-## 2. File & Naming Rules (Slug-like)
+## 3. File & Naming Rules (Slug-like)
 
 Readability and structural consistency are more important than brevity.
 
@@ -54,9 +63,9 @@ Readability and structural consistency are more important than brevity.
 
 ---
 
-## 3. Layering & Coding Patterns
+## 4. Layering & Coding Patterns
 
-### 3.1 Permissions & Guards
+### 4.1 Permissions & Guards
 *   Permissions MUST be registered at the top of the controller file using `permission.register({ ... })`.
 *   Controller methods MUST be guarded using the registered permission object:
     ```typescript
@@ -77,7 +86,7 @@ Readability and structural consistency are more important than brevity.
     }
     ```
 
-### 3.2 Controller & Validation
+### 4.2 Controller & Validation
 *   All external inputs (body, query, params) MUST be validated inside the controller method using `await c.validation({ ... })` before delegating to services.
 *   Responses MUST be returned using the helper methods on the controller context `c`:
     *   `c.responseSuccess(data, message)`
@@ -85,7 +94,7 @@ Readability and structural consistency are more important than brevity.
     *   `c.responseSaved(record)`
     *   `c.responseError(err, context)`
 
-### 3.3 Data Access & Active Record
+### 4.3 Data Access & Active Record
 *   Database operations MUST use the Active Record pattern via `Model.query()`.
 *   Writing raw queries scattered across controllers is forbidden.
 *   Data saving and updating MUST use the `.pump(...)` method:
@@ -97,14 +106,14 @@ Readability and structural consistency are more important than brevity.
     ```
 *   Transactions MUST be explicit using `db.transaction()` and handled with try-catch rollback/commit blocks.
 
-### 3.4 Reuse of Existing Utilities (Utility Reuse Discipline)
+### 4.4 Reuse of Existing Utilities (Utility Reuse Discipline)
 *   Skalfa API provides a rich set of built-in utilities (e.g., `api`, `middleware`, `auth`, `db`, `permission`, `queue`, `redis`, `socket`, `storage`, `validation`, `cron`, `mail`, `da`) via the `@utils` path alias.
 *   The agent MUST reuse these existing utilities. Writing custom helper functions or reinventing logic (like custom db wrappers, manual file upload handlers, or custom validation engines) is strictly forbidden.
 *   Do not casually create custom utility files.
 
 ---
 
-## 4. Code Formatting (Vertical Alignment)
+## 5. Code Formatting (Vertical Alignment)
 
 *   Object keys, variable assignments, and type definitions MUST be aligned vertically in block form (column-based alignment). Use spaces to align `:` and `=` consistently within the same block.
     *   *Example*:
@@ -128,7 +137,7 @@ Readability and structural consistency are more important than brevity.
 
 ---
 
-## 5. Skalfa CLI Integration
+## 6. Skalfa CLI Integration
 
 *   When creating new modules, controllers, models, or routes, the agent MUST use `skalfa-cli` first:
     ```bash
@@ -145,9 +154,9 @@ Readability and structural consistency are more important than brevity.
 
 ---
 
-## 6. Code Modification Boundaries
+## 7. Code Modification Boundaries
 
-### 6.1 Writable Paths (agent MAY modify)
+### 7.1 Writable Paths (agent MAY modify)
 *   `app/controllers/**`
 *   `app/models/**`
 *   `app/routes/**`
@@ -157,7 +166,7 @@ Readability and structural consistency are more important than brevity.
 *   `.agent/records/**`
 *   `.agent/test/**`
 
-### 6.2 Read-Only Paths (agent MUST NOT modify)
+### 7.2 Read-Only Paths (agent MUST NOT modify)
 *   `utils/**`
 *   `app/app.ts`
 
@@ -165,7 +174,7 @@ If a fix requires changes inside read-only paths, the agent MUST NOT modify the 
 
 ---
 
-## 7. Definition of DONE
+## 8. Definition of DONE
 
 A backend task is considered **DONE** only when:
 1.  Skalfa API patterns and slug-like naming are strictly followed.
