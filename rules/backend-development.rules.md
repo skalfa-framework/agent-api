@@ -28,16 +28,18 @@ Before creating any plan (such as `implementation_plan.md`) or performing any co
 *   Code MUST be organized around features/domains under `app/controllers/` and `app/models/`.
 *   Cross-feature coupling is forbidden unless explicitly designed.
 
-### 2.2 Service Objects (Controller-level & Model-level)
-*   All business logic MUST live inside **service objects** located in a nested `_services/` folder.
-*   **Controller-level Services**:
-    *   Located in `app/controllers/<module>/_services/`.
-    *   Responsible for orchestrating endpoint business flows, handling input processing, and preparing response data.
-    *   Controllers MUST remain thin: they only handle transport (Elysia context), request parsing, validation, permission guarding, and response shaping. Direct business logic or database mutation inside controllers is strictly forbidden.
-*   **Model-level Services**:
-    *   Located in `app/models/<module>/_services/`.
-    *   Responsible for model-specific logic, calculations, or data generation (e.g., generating a transaction number, recalculating booking totals).
-    *   These services MUST be registered/imported and called inside the Model class (e.g. `generateNumber = async () => await BookingService.generateNumber()`).
+### 2.2 Service Objects vs. Inline Controller Logic
+*   **Simple CRUD (Directly in Controller)**:
+    *   If an endpoint only performs simple CRUD operations (e.g., validating input, uploading files, fetching data via `.resolve(c)`, saving/updating a single model via `.pump()`, or deleting via `.delete()`), the logic **MUST** be written directly inside the controller method.
+    *   **Creating a service object for simple CRUD is strictly forbidden** to prevent file bloat.
+*   **Service Objects (Complex/Long Logic)**:
+    *   A service object (located in `_services/`) should **ONLY** be created when:
+        1.  The business logic is complex (e.g., multi-step workflows, third-party API integration, complex calculations).
+        2.  It involves multiple database operations that must be orchestrated within a transaction.
+        3.  The controller method's logic (excluding validation block) exceeds ~30 lines.
+    *   *Controller-level Services*: Located in `app/controllers/<module>/_services/`. Responsible for orchestrating complex endpoint flows.
+    *   *Model-level Services*: Located in `app/models/<module>/_services/`. Responsible for model-specific logic, registered and called inside the Model class.
+    *   Controllers MUST remain thin: they only handle transport (Elysia context), request parsing, validation, permission guarding, response shaping, and simple CRUD orchestration.
 
 
 ### 2.3 Explicit Backend Behavior

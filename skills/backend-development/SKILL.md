@@ -28,7 +28,8 @@ Implement backend code strictly according to the approved implementation plan, S
 1.  **Read the Plan**: Open the latest planning file in `.agent/records/activities/act-xxx-plan-xxx.md`.
 2.  **Generate Boilerplate**: If new controllers or models are required, run `skalfa-cli` to generate them. Do not write boilerplate from scratch.
 3.  **Implement Service Logic**:
-    *   Put all business logic inside service objects under `app/controllers/<module>/_services/<slug>.service.ts`.
+    *   For complex or long operations, put business logic inside service objects under `app/controllers/<module>/_services/<slug>.service.ts`.
+    *   Simple CRUD operations (validating, uploading, saving/updating a single model via `.pump()`, or deleting) MUST be written inline directly in the controller method.
     *   Name the service file using slug-like format.
 4.  **Format Code**: Apply vertical alignment to object keys (`: `) and variable assignments (`= `) in the block. Keep imports and function calls on a single line unless excessively long.
 5.  **Verify Statics**: Run `bun tsc --noEmit` in the project root. Resolve any compiler errors immediately.

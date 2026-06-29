@@ -56,7 +56,7 @@ All detailed logs, plans, and code diffs must be stored as separate files in `./
     *   Request schema (params, query, body) and validation rules
     *   Response schema (success and error)
     *   Involved controllers and models
-    *   Business logic to be implemented inside service objects
+    *   Business logic to be implemented inside service objects (only if complex or long; simple CRUD is inline in the controller)
     *   Permissions required (using `permission.register`)
 *   Create a plan detail file: `./.agent/records/activities/act-<num>-plan-<feature>.md`.
 *   Record the event in `./.agent/records/ledger.jsonl`:
@@ -122,7 +122,7 @@ For every new or modified feature, the agent MUST write and execute a runtime te
     *   No files outside the writable paths were modified.
     *   All file names follow the slug convention.
     *   Vertical alignment is consistently applied.
-    *   Service object pattern is strictly followed.
+    *   Service object pattern is followed (logic in `_services/` only for complex or long operations; simple CRUD is inline in the controller).
 *   Create a review report and diff patch:
     *   Report: `./.agent/records/activities/act-<num>-review-<feature>.md`
     *   Patch: `./.agent/records/activities/act-<num>-diff-<feature>.patch`
