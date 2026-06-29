@@ -44,7 +44,7 @@ All detailed logs, plans, and code diffs must be stored as separate files in `./
 ### Step 1.1 — Context & Knowledge Alignment (README-First)
 *   The agent MUST read the project's root `README.md` to understand the overall project outline, architecture, and business rules.
 *   Verify how the requested feature fits into the existing modules and outline described in `README.md`.
-*   **Knowledge Mapping**: The agent MUST read the Knowledge Registry in `./.agent/knowledges/registry.md`. Identify and read ONLY the specific knowledge files (e.g., `api-docs.md`, `validation.md`) that are directly relevant to the database models, APIs, and utilities required for the task. Reading unrelated knowledge files is forbidden to prevent context bloat.
+*   **Knowledge Mapping**: The agent MUST read the Knowledge Registry in `./.agent/knowledges/registry.md`. Identify and read ONLY the specific knowledge files (e.g., `validation.md`, `orm.md`) that are directly relevant to the database models, APIs, and utilities required for the task. Reading unrelated knowledge files is forbidden to prevent context bloat.
 
 
 ### Step 1.2 — Outline Adjustment (If Applicable)
@@ -128,7 +128,7 @@ For every new or modified feature, the agent MUST write and execute a runtime te
     *   Patch: `./.agent/records/activities/act-<num>-diff-<feature>.patch`
 
 ### Step 5.2 — Ledger Finalization
-*   Update the API documentation in `./.agent/records/api-docs.md` with the new/modified endpoints, payloads, and query parameters.
+*   Run the API documentation generator command `bun skalfa generate:docs` to automatically update the API documentation in the `./docs/` folder with the new/modified endpoints, payloads, and query parameters.
 *   Record the completion event in `ledger.jsonl`:
     ```json
     {"timestamp": "TIMESTAMP", "agent": "AGENT_NAME", "event": "FEATURE_COMPLETED", "payload": {"feature": "FEATURE_NAME", "review_file": "./.agent/records/activities/act-<num>-review-<feature>.md", "patch_file": "./.agent/records/activities/act-<num>-diff-<feature>.patch"}}

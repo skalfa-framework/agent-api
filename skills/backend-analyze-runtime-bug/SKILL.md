@@ -19,7 +19,7 @@ Determine the root cause of backend runtime errors by executing feature-scoped A
 
 ## Step-by-Step Instructions
 
-1.  **Read API Docs**: Read `.agent/records/api-docs.md` to identify the target API endpoint, query parameters, and payload structure.
+1.  **Read API Docs**: Read the generated API documentation in the `./docs/` folder (or check the route definitions in `app/routes/`) to identify the target API endpoint, query parameters, and payload structure.
 2.  **Identify Feature**: Determine which feature or API endpoint is failing.
 3.  **Locate/Create Test File**:
     *   Check `.agent/test/` for an existing `<slug>.test.ts` file.

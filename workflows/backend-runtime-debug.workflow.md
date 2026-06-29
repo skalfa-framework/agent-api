@@ -23,7 +23,7 @@ The agent MUST use runtime tests as the primary observation and verification too
 ## STAGE 1 — REPRODUCTION & ANALYSIS
 
 ### Step 1.1 — Identify the Issue
-*   The agent MUST read `.agent/records/api-docs.md` to identify the target API endpoint, its expected query parameters, and payload structure.
+*   The agent MUST read the generated API documentation in `./docs/` (or check the route definitions in `app/routes/`) to identify the target API endpoint, its expected query parameters, and payload structure.
 *   Determine the failing feature, API endpoint, or queue handler.
 *   Check `./.agent/test/` for an existing test file for this feature (e.g., `./.agent/test/<slug>.test.ts`).
 *   If no relevant test file exists, create a new one:

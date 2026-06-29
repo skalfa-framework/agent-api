@@ -175,6 +175,6 @@ A backend task is considered **DONE** only when:
 5.  Code formatting is vertically aligned.
 6.  The TypeScript compiler check (`bun tsc --noEmit`) passes with 0 errors.
 7.  A test file in `.agent/test/<slug>.test.ts` is created, executed via Bun, and all scenarios pass.
-8.  The API documentation in `.agent/records/api-docs.md` is updated with any new/modified endpoints, payloads, and query parameters.
+8.  The API documentation is updated by running the `bun skalfa generate:docs` command after creating or modifying any API endpoints.
 9.  The ledger (`.agent/records/ledger.jsonl`) and state (`.agent/records/state.json`) are updated.
 
