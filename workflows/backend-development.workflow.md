@@ -128,7 +128,7 @@ For every new or modified feature, the agent MUST write and execute a runtime te
     *   Patch: `./.agent/records/activities/act-<num>-diff-<feature>.patch`
 
 ### Step 5.2 — Ledger Finalization
-*   Run the API documentation generator command `bun skalfa generate:docs` to automatically update the API documentation in the `./docs/` folder with the new/modified endpoints, payloads, and query parameters.
+*   Run the API documentation generator command `bun skalfa generate:docs --path=<route_path>` (e.g., `--path=/users`) to automatically update the API documentation in the `./docs/` folder for the newly created/modified endpoints.
 *   Record the completion event in `ledger.jsonl`:
     ```json
     {"timestamp": "TIMESTAMP", "agent": "AGENT_NAME", "event": "FEATURE_COMPLETED", "payload": {"feature": "FEATURE_NAME", "review_file": "./.agent/records/activities/act-<num>-review-<feature>.md", "patch_file": "./.agent/records/activities/act-<num>-diff-<feature>.patch"}}
