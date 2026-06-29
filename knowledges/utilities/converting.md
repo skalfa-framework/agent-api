@@ -1,68 +1,52 @@
-# Panduan Utilitas: Konversi Format (Converting) (`@utils`)
+# Utility Guide: Data Formatting & Converting (`converting`)
 
-Utilitas `conversion` di backend menyediakan metode pemformatan yang identik dengan frontend untuk menjaga konsistensi manipulasi string, nominal mata uang, dan tanggal di kedua sisi aplikasi Skalfa.
-
----
-
-## 1. Manipulasi Huruf String
-
-*   **Snake Case (`strSnake`)**:
-    Mengubah string menjadi format snake_case.
-    ```typescript
-    conversion.strSnake("HelloWorld"); // Hasil: "hello_world"
-    ```
-*   **Slug Case (`strSlug`)**:
-    Mengubah string menjadi format kebab-case/url-slug.
-    ```typescript
-    conversion.strSlug("Hello World"); // Hasil: "hello-world"
-    ```
-*   **Camel Case (`strCamel`)**:
-    Mengubah string menjadi format camelCase.
-    ```typescript
-    conversion.strCamel("hello_world"); // Hasil: "helloWorld"
-    ```
-*   **Pascal Case (`strPascal`)**:
-    Mengubah string menjadi format PascalCase.
-    ```typescript
-    conversion.strPascal("hello_world"); // Hasil: "HelloWorld"
-    ```
-*   **Bentuk Jamak (`strPlural`)**:
-    Mengubah kata benda bahasa Inggris menjadi bentuk jamak.
-    ```typescript
-    conversion.strPlural("category"); // Hasil: "categories"
-    ```
-*   **Bentuk Tunggal (`strSingular`)**:
-    Mengubah kata benda menjadi bentuk tunggal (kapitalisasi Pascal).
-    ```typescript
-    conversion.strSingular("booking_payments"); // Hasil: "BookingPayments"
-    ```
+The `converting` utility provides formatters for currency, dates, and localized values.
 
 ---
 
-## 2. Pemformatan Mata Uang (`currency`)
+## 1. Currency Formatter (`currency`)
 
-Memformat angka nominal menjadi mata uang Rupiah secara standar.
+Formats numbers into localized currency strings. By default, it formats to Indonesian Rupiah (`Rp`).
 
 ```typescript
-import { conversion } from "@utils";
+import { conversion } from '@utils'
 
-conversion.currency(150000); // Hasil: "Rp 150.000"
+// Default: IDR (Rupiah)
+conversion.currency(15000);
+// => "Rp15.000"
+
+// Custom locale and currency code
+conversion.currency(100, "en-US", "USD");
+// => "$100.00"
 ```
 
 ---
 
-## 3. Pemformatan Tanggal Lokal (`date`)
+## 2. Date Formatter (`date`)
 
-Memformat string tanggal menggunakan standardisasi `Intl.DateTimeFormat` lokalisasi Indonesia (`id-ID`).
+Formats dates using standard tokens. It uses native `Intl.DateTimeFormat` with Indonesian locale (`id-ID`) under the hood.
 
 ```typescript
-import { conversion } from "@utils";
+import { conversion } from '@utils'
 
-const isoDate = "2026-06-28T12:00:00.000Z";
+// Default format: "DD MMM YYYY"
+conversion.date("2026-06-29");
+// => "29 Jun 2026"
 
-// Format default: "DD MMM YYYY"
-conversion.date(isoDate); // Hasil: "28 Jun 2026"
+// Custom format
+conversion.date("2026-06-29", "YYYY/MM/DD");
+// => "2026/06/29"
 
-// Format kustom jam dan menit
-conversion.date(isoDate, "YYYY-MM-DD HH:mm"); // Hasil: "2026-06-28 12:00"
+// Format with day name
+conversion.date("2026-06-29", "dddd, DD MMMM YYYY");
+// => "Senin, 29 Juni 2026"
 ```
+
+### Supported Tokens:
+*   `YYYY` / `YY`: 4 or 2 digit year.
+*   `MMMM` / `MMM` / `MM` / `M`: Month name (full, short), 2 digit, or 1 digit month.
+*   `DD` / `D`: 2 or 1 digit day.
+*   `dddd` / `ddd`: Day name (full, short).
+*   `HH` / `H` / `hh` / `h`: Hours (24h or 12h formats).
+*   `mm` / `m`: Minutes.
+*   `ss` / `s`: Seconds.

@@ -1,92 +1,60 @@
-# Panduan Utilitas: Pengendali (Controller Utility) (`@utils`)
+# Utility Guide: Controller Helper (`controller`)
 
-Controller Utility di Skalfa API menyediakan kumpulan helper yang disuntikkan langsung ke dalam objek `ControllerContext` (`c`). Tujuannya adalah menyeragamkan cara membaca request, melakukan validasi, serta mengembalikan response tanpa menulis ulang boilerplate di setiap controller.
+The `controller` utility provides standard response formats, pagination parsers, and validation triggers for Elysia controllers.
 
 ---
 
-## 1. Pengambilan Parameter Query (`c.getQuery`)
+## 1. Query Parameters Parser (`c.getQuery`)
 
-Membaca, menormalkan, dan mengonversi tipe data query string dari URL secara otomatis.
+Automatically parses and normalizes query parameters from the request URL:
+*   `page`: Page number (defaults to `1`).
+*   `paginate`: Number of items per page (defaults to `10`).
+*   `search`: Search query string.
+*   `sort`: Array of sorting fields (e.g. `["created_at desc"]`).
+*   `filter`: Object containing key-value filters.
+*   `expand`: Relations to eagerly load.
 
+---
+
+## 2. Standard Responses
+
+Always use the context helper methods to return HTTP responses. This ensures a consistent JSON structure across the entire API.
+
+### A. `c.responseData(data, totalRow, message)`
+Used for returning lists of records, supporting pagination headers.
 ```typescript
-// URL: /api/users?page=2&paginate=15&search=budi&sort=["name desc"]
 static async index(c: ControllerContext) {
-  const { page, paginate, search, sort, filter, expand } = c.getQuery;
-  
-  // page = 2 (number)
-  // paginate = 15 (number)
-  // search = "budi" (string)
-  // sort = ["name desc"] (array string)
+  const { data, total } = await User.query().resolve(c);
+  c.responseData(data, total);
 }
+// Returns: { status: 200, body: { data: [...], total: 100 } }
 ```
 
----
-
-## 2. Validasi Payload Request (`c.validation`)
-
-Memvalidasi data `c.body` berdasarkan aturan (*rules*). Jika validasi gagal, eksekusi dihentikan seketika dan server otomatis mengembalikan status `422 Unprocessable Entity` beserta detail error.
-
+### B. `c.responseSaved(data, message)`
+Used after creating or updating a record.
 ```typescript
 static async store(c: ControllerContext) {
-  await c.validation({
-    name:  'required|string|max:100',
-    email: 'required|email|unique:users,email'
-  });
+  const record = await (new User).pump(c.payload);
+  c.responseSaved(record, "User created successfully");
+}
+// Returns: { status: 201, body: { data: {...}, message: "User created successfully" } }
+```
 
-  // Data aman untuk diproses...
+### C. `c.responseSuccess(data, message)`
+Used for general successful operations.
+```typescript
+static async doAction(c: ControllerContext) {
+  c.responseSuccess(null, "Action completed");
 }
 ```
 
----
-
-## 3. Helper Pengiriman Respons
-
-Semua helper respons di bawah ini langsung menghentikan proses eksekusi (*early return/throw*) dengan status HTTP yang sesuai untuk menjaga konsistensi format JSON API Skalfa.
-
-### A. Respons Daftar Data (`c.responseData`)
-Mengembalikan status `200 OK` dengan format data list dan total baris untuk paginasi.
-```typescript
-c.responseData(users, total);
-// JSON: { "message": "Success", "data": [...], "total_row": 50 }
-```
-
-### B. Respons Sukses Umum (`c.responseSuccess`)
-Mengembalikan status `200 OK` (atau `201` jika diatur) untuk aksi non-create (seperti update, delete, atau aksi proses).
-```typescript
-c.responseSuccess(record, 'Data berhasil diperbarui');
-```
-
-### C. Respons Simpan Data (`c.responseSaved`)
-Mengembalikan status `201 Created` setelah sukses menyimpan data baru.
-```typescript
-c.responseSaved(record);
-```
-
-### D. Respons Forbidden (`c.responseForbidden`)
-Mengembalikan status `403 Forbidden` saat otorisasi atau hak akses ditolak.
-```typescript
-c.responseForbidden("Anda tidak memiliki akses ke fitur ini");
-```
-
-### E. Respons Gagal Server-side (`c.responseError`)
-Mencatat detail error ke Winston logger dan melempar status `500 Internal Server Error`.
+### D. `c.responseError(error, section, message)`
+Handles errors and formats them into a standard error response.
 ```typescript
 try {
   // logic...
 } catch (err) {
-  c.responseError(err as Error, 'User.store', 'Gagal menyimpan data user');
+  c.responseError(err, "UserController.store", "Failed to save user");
 }
 ```
-
----
-
-## 4. Helper Manajemen Berkas
-
-*   **`c.uploadFile(file, folder?)`**: Mengunggah berkas ke disk storage dan mengembalikan path relatifnya.
-    ```typescript
-    const path = await c.uploadFile(c.body.file, 'avatars');
-    ```
-*   **`c.deleteFile(filePath)`**: Menghapus berkas fisik dari storage.
-    ```typescript
-    c.deleteFile('storage/public/avatars/example.png');
-    ```
+*Note: If the application is running in development mode, the error stack trace will be included in the response.*

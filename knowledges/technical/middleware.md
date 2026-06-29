@@ -1,66 +1,72 @@
-# Panduan Teknis: Middleware
+# Technical Guide: Middleware
 
-Middleware di Skalfa API digunakan untuk menangani proses lintas endpoint seperti CORS, parsing request body, autentikasi, logging, dan validasi. Skalfa API mengikuti cara kerja native Elysia, tanpa menambahkan abstraksi tersembunyi, sehingga alur eksekusi middleware tetap eksplisit dan mudah dipahami.
-
----
-
-## 1. Konsep Dasar Middleware
-
-Middleware adalah fungsi yang dieksekusi sebelum handler endpoint dijalankan. Ia dapat:
-1.  Memodifikasi request (misalnya: mendekripsi token).
-2.  Menambahkan data ke konteks (misalnya: menyuntikkan data `c.user`).
-3.  Menghentikan request (misalnya: jika otentikasi gagal).
-4.  Melanjutkan proses ke handler berikutnya.
+Middleware in Skalfa API is used to intercept HTTP requests before they reach the controller handler. It handles cross-cutting concerns like authentication, logging, CORS, and request parsing.
 
 ---
 
-## 2. Pemasangan Middleware
+## 1. Global Middleware
 
-### A. Middleware Global (Chaining di Instance)
-Diberlakukan untuk seluruh request yang masuk ke aplikasi. Biasanya dipasang saat inisialisasi server.
+Global middleware is executed for every incoming request. It is registered directly in `app/app.ts`:
 
 ```typescript
-// src/app.ts
+// app/app.ts
 import { Elysia } from 'elysia'
-import { Middleware } from '@utils'
+import { cors } from '@elysia/cors'
+import { logger } from '@utils'
 
 const app = new Elysia()
-  .use(Middleware.Cors)
-  .use(Middleware.BodyParse)
+  .use(cors()) // Global CORS middleware
+  .use(logger) // Global logger middleware
 ```
 
-### B. Middleware Lokal (Di dalam Group / Route)
-Hanya berlaku untuk endpoint yang didefinisikan setelah middleware tersebut dipanggil di dalam grup rute.
+---
+
+## 2. Local/Route-Specific Middleware
+
+Local middleware is applied to specific route groups or individual endpoints. The most common local middleware is `Middleware.Auth`.
 
 ```typescript
-// src/routes/index.ts
-export const routes = (app: Elysia) => app.group('/api', (route) => {
-  // Endpoint ini bebas akses (tidak melewati Middleware.Auth)
-  route.post('/login', AuthController.login)
+// app/routes/index.ts
+import { Elysia } from 'elysia'
+import { Middleware } from '@utils'
+import { UserController } from '@controllers'
 
-  // Mengunci semua endpoint di bawah baris ini dengan Middleware.Auth
+export const routes = (app: Elysia) => app.group('/api', (route) => {
+  // Apply Auth middleware to all routes registered under this group
   route.use(Middleware.Auth)
 
-  // Endpoint ini wajib terotentikasi
-  route.get('/me', AuthController.me)
   route.get('/users', UserController.index)
-
+  
   return route
 })
 ```
 
 ---
 
-## 3. Urutan Eksekusi
+## 3. Creating Custom Middleware
 
-Urutan penulisan middleware menentukan alur eksekusinya:
-1.  **Middleware Global** → Dijalankan pertama kali pada setiap request.
-2.  **Middleware Group / Route** → Dijalankan sesuai urutan deklarasi baris kode di dalam route group.
-3.  **Controller / Handler** → Dieksekusi terakhir setelah lolos seluruh middleware.
+Custom middleware is defined using Elysia's `.derive` or `.onBeforeHandle` hooks.
 
+```typescript
+// app/middleware/ip-filter.middleware.ts
+import { Elysia } from 'elysia'
+
+export const ipFilter = (allowedIps: string[]) => (app: Elysia) => 
+  app.onBeforeHandle(({ request, set }) => {
+    const clientIp = request.headers.get("x-forwarded-for") || "unknown";
+    
+    if (!allowedIps.includes(clientIp)) {
+      set.status = 403;
+      return { error: "Forbidden: IP not allowed" };
+    }
+  })
+```
+Register it in your routes or globally:
+```typescript
+route.use(ipFilter(["127.0.0.1"]))
+```
 ---
 
-## 4. Kapan Menggunakan Global vs Lokal
+## 4. Execution Order
 
-*   **Global**: Gunakan untuk penanganan teknis umum seperti CORS, request logger, body parser, dan global error handler.
-*   **Lokal / Group**: Gunakan untuk aturan bisnis spesifik seperti pengecekan login (`Auth`), verifikasi peran (`Role`), validasi izin (`Permission`), atau validasi khusus rute tertentu.
+Middleware is executed in the order of its registration. Always register logging and CORS middleware first, followed by body parsers, authentication, and finally specific route guards.

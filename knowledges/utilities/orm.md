@@ -1,12 +1,12 @@
-# Panduan Utilitas: ORM & Model (`@utils`)
+# Utility Guide: ORM & Model (`orm`)
 
-Model di Skalfa API adalah lapisan ORM ringan yang dibangun di atas Knex.js. Model bertugas mendefinisikan skema data, relasi, casting, hook lifecycle, serta helper query yang terintegrasi langsung dengan `ControllerContext`.
+Models in Skalfa API are built on top of Knex.js, providing an Active Record ORM. They handle schema definition, relations, casting, lifecycle hooks, and query builders.
 
 ---
 
-## 1. Mendefinisikan Model
+## 1. Defining a Model
 
-Model dibuat dengan mewarisi kelas abstrak `Model`. Properti kolom didefinisikan menggunakan dekorator `@Field`.
+Models inherit from the abstract `Model` class. Columns are defined using the `@Field` decorator.
 
 ```typescript
 import { Model, Field, SoftDelete, Attribute, BelongsToMany } from '@utils'
@@ -36,89 +36,74 @@ export class User extends Model {
 }
 ```
 
-### Kunci Parameter `@Field`:
-*   `string` / `number` / `boolean` / `date` / `json`: Casting tipe data otomatis dari/ke database.
-*   `fillable`: Kolom diizinkan disimpan melalui payload `.pump()`.
-*   `selectable`: Kolom dimasukkan ke dalam daftar select default.
-*   `searchable`: Kolom diikutsertakan dalam pencarian teks.
+### `@Field` Options:
+*   `string` / `number` / `boolean` / `date` / `json`: Automatic data type casting.
+*   `fillable`: Field is allowed to be populated via `.pump()`.
+*   `selectable`: Field is included in default SELECT queries.
+*   `searchable`: Field is scanned during global `.search()` queries.
 
 ---
 
-## 2. Query Menggunakan Model
+## 2. Querying Data
 
-Query diawali dengan `Model.query()`, yang menghasilkan query builder Knex yang telah diperluas dengan berbagai helper:
+Querying starts with `Model.query()`, which returns a Knex query builder extended with several helpers:
 
-### A. Pencarian (`.search`)
+### A. Searching (`.search`)
 ```typescript
 const users = await User.query()
   .search(c.getQuery.search, {
-    searchables: ['name'], // Opsional: menimpa kolom searchable model
-    includes:    ['email'] // Opsional: menambahkan kolom pencarian
+    searchables: ['name'], // Optional override
+    includes:    ['email'] // Optional additions
   })
   .get()
 ```
 
-### B. Penyaringan (`.filter`)
-Mendukung operator penyaringan terstandardisasi menggunakan format `operator:nilai`.
-*   *Operator*: `li` (ilike), `eq` (=), `ne` (!=), `in` (whereIn), `ni` (whereNotIn), `bw` (between).
-*   *Kondisi*: `or` atau `and`.
-
+### B. Filtering (`.filter`)
+Filters records using a standardized `operator:value` syntax.
+*   *Operators*: `li` (ilike), `eq` (=), `ne` (!=), `in` (whereIn), `ni` (whereNotIn), `bw` (between).
 ```typescript
-// Format string: "field=operator:nilai"
+// URL format: ?filter={"name":"li:john"}
 await User.query().filter(c.getQuery.filter).get()
-
-// Secara programmatik:
-await User.query().filter({
-  name:    'li:joko',   // name ILIKE '%joko%'
-  role_id: 'eq:1',      // role_id = 1
-  status:  'or:eq:active' // OR status = 'active'
-}).get()
 ```
 
-### C. Relasi Eager Loading (`.expand`)
-Memuat relasi model secara otomatis menggunakan pemisah titik dua (`:`) untuk kolom spesifik.
-
+### C. Eager Loading Relations (`.expand`)
+Loads related models automatically.
 ```typescript
-// Memuat relasi 'roles' hanya untuk kolom 'id' dan 'name'
-await User.query().expand(["roles:id,name"]).get()
+await User.query().expand(["roles"]).get()
 ```
 
-### D. Paginasi & Mode Opsi (`.paginateOrOption`)
-Mendukung pencarian list biasa (paginasi) atau format dropdown pilihan (options mode) secara dinamis berbasis header `x-options` atau query `isOption=true`.
-
+### D. Pagination & Option Mode (`.paginateOrOption`)
+Resolves queries into either a paginated list or a simple `{ value, label }` dropdown list based on the presence of `isOption=true` query or `x-options` header.
 ```typescript
-// Jika mode options aktif, mengembalikan array: { value: id, label: name }
 await User.query().paginateOrOption(
   c.getQuery.page,
   c.getQuery.paginate,
   c.request.headers.get("x-options") === "true",
-  ["id", "name"] // Kolom [value, label] untuk mode option
+  ["id", "name"] // [value, label] mapping
 )
 ```
 
 ---
 
-## 3. Relasi Antar Model
+## 3. Model Relations
 
-*   **`@HasOne(() => TargetModel, foreignKey)`**
-*   **`@HasMany(() => TargetModel, foreignKey)`**
-*   **`@BelongsTo(() => TargetModel, foreignKey)`**
-*   **`@BelongsToMany(() => TargetModel, pivotTable, foreignKey, targetKey)`**
+*   `@HasOne(() => TargetModel, foreignKey)`
+*   `@HasMany(() => TargetModel, foreignKey)`
+*   `@BelongsTo(() => TargetModel, foreignKey)`
+*   `@BelongsToMany(() => TargetModel, pivotTable, foreignKey, targetKey)`
 
 ---
 
-## 4. Lifecycle Hooks Model
+## 4. Lifecycle Hooks (`@On`)
 
-Model mendukung hook untuk memotong alur kerja database sebelum/sesudah data disimpan, diperbarui, atau dihapus.
+Hooks intercept database operations before or after saving. Define them as instance methods decorated with `@On(event)`.
 
-### A. Jenis Hook
+### A. Supported Events
 *   `before-create` / `after-create`
 *   `before-update` / `after-update`
 *   `before-delete` / `after-delete`
 
-### B. Pendaftaran Hook Menggunakan Decorator (`@On`)
-Hook didefinisikan sebagai *instance method* di dalam kelas model dan dihias dengan dekorator `@On(event)`. Di dalam method ini, Anda dapat merujuk ke instance model aktif menggunakan `this`.
-
+### B. Example
 ```typescript
 import { Model, On } from '@utils'
 
@@ -131,36 +116,22 @@ export class User extends Model {
       this.name = this.name.trim();
     }
   }
-
-  @On('after-create')
-  afterCreate({ trx }) {
-    // Aksi setelah berhasil disimpan...
-  }
 }
 ```
 
-### C. Modifikasi Hook dari Controller (Instance-based)
-*   **Mematikan Hook (`model.off`)**:
-    ```typescript
-    const user = new User();
-    user.off('before-create'); // Menonaktifkan hook before-create saat user.save()
-    ```
-*   **Mendaftarkan Hook Dinamis (`model.on`)**:
-    ```typescript
-    const user = new User();
-    user.on('before-create', ({ model, trx }) => {
-      model.name = model.name.toUpperCase();
-    });
-    ```
+### C. Modifying Hooks from Controllers
+```typescript
+const user = new User();
+user.off('before-create'); // Turn off hook
+```
 ---
 
-## 5. Filter Relasi (`whereHas` & `whereDoesntHave`)
+## 5. Relation Filters (`whereHas` & `whereDoesntHave`)
 
-Menyaring data model berdasarkan kondisi pada tabel relasinya.
+Filters parent records based on conditions in their related tables.
 
 ```typescript
-// Hanya mengambil user yang memiliki postingan dengan judul mengandung 'test'
 const users = await User.query().whereHas('posts', (q) => {
-  q.where('posts.title', 'like', '%test%');
+  q.where('posts.title', 'like', '%announcement%');
 });
 ```

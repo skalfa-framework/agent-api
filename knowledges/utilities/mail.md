@@ -1,51 +1,57 @@
-# Panduan Utilitas: Pengiriman Email (Mail) (`@utils`)
+# Utility Guide: Mail Dispatcher (`mail`)
 
-Utilitas `mail` digunakan untuk mengirim email berbasis SMTP dan merender template email menggunakan stub berkas di backend Skalfa API.
+The `mail` utility provides a wrapper around Nodemailer to dispatch HTML/text emails.
 
-## 1. Mengirim Email (`sendMail`)
+---
 
-Metode `sendMail` menggunakan pustaka `nodemailer` di bawah kap dan secara otomatis membaca kredensial SMTP dari berkas `.env` (`MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_NAME`, `MAIL_FROM_ADDRESS`).
+## 1. Sending Simple Emails
+
+Use `mail.send` to send an email.
 
 ```typescript
-import { sendMail } from "@utils";
+import { mail } from '@utils'
 
-await sendMail({
-  to:          "penerima@email.com",
-  subject:     "Verifikasi Pendaftaran Akun",
-  content:     "<h1>Halo!</h1><p>Terima kasih telah mendaftar.</p>", // Konten HTML
-  text:        "Halo! Terima kasih telah mendaftar.",              // Konten teks biasa (fallback)
+await mail.send({
+  to:      "user@example.com",
+  subject: "Account Activated",
+  html:    "<h3>Your account is now active!</h3>",
+  text:    "Your account is now active!" // plain text fallback
+});
+```
+
+---
+
+## 2. Attachments
+
+You can attach local files or buffers:
+
+```typescript
+import { mail } from '@utils'
+import path from 'path'
+
+await mail.send({
+  to:      "client@example.com",
+  subject: "Monthly Report",
+  html:    "<p>Please find your monthly report attached.</p>",
   attachments: [
-    { filename: "panduan.pdf", path: "/path/to/panduan.pdf" }
+    {
+      filename: "report.pdf",
+      path:     path.resolve("storage/private/reports/june.pdf")
+    }
   ]
 });
 ```
 
 ---
 
-## 2. Merender Template Email (`renderMailTemplate`)
+## 3. Send to Multiple Recipients
 
-Merender template email menggunakan berkas stub di folder `outputs/mails/templates/<nama_template>.mail.stub` dan mengganti variabel placeholder `{{ key }}` secara otomatis, serta membungkusnya ke dalam layout utama `layout.mail.stub`.
-
-### Contoh Berkas `verification.mail.stub`:
-```html
-<p>Halo {{ name }},</p>
-<p>Silakan klik tautan berikut untuk memverifikasi akun Anda:</p>
-<a href="{{ url }}">Verifikasi Akun</a>
-```
-
-### Pemanggilan di Controller / Service:
 ```typescript
-import { sendMail, renderMailTemplate } from "@utils";
+import { mail } from '@utils'
 
-const htmlContent = renderMailTemplate("verification", {
-  name: "Ahmad Budi",
-  url:  "https://my-app.com/verify?token=xyz"
-});
-
-await sendMail({
-  to:      "budi@email.com",
-  subject: "Verifikasi Akun Anda",
-  content: htmlContent
+await mail.send({
+  to:      ["user1@example.com", "user2@example.com"],
+  subject: "System Update",
+  html:    "<p>The system will be down for maintenance tonight.</p>"
 });
 ```
-*Catatan untuk Agen: Selalu gunakan `renderMailTemplate` untuk menjaga keselarasan desain visual email keluar (seperti header/footer bermerek).*

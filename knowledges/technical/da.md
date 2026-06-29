@@ -1,52 +1,71 @@
-# Panduan Teknis: Analitik Data (OLAP Clickhouse)
+# Technical Guide: Data Analytics & OLAP (`da`)
 
-Skalfa API menyediakan utilitas analitik data berbasis ClickHouse untuk kebutuhan Online Analytical Processing (OLAP) seperti penyimpanan access logs, error logs, audit trail, event tracking, dan pelaporan statistik skala besar.
-
----
-
-## 1. Mengapa Memisahkan OLTP dan OLAP?
-
-*   **OLTP (PostgreSQL/MySQL)**: Digunakan oleh ORM/Knex untuk transaksi harian aplikasi (tabel bookings, users, payments). Dirancang untuk konsistensi tinggi dan query baris tunggal yang cepat.
-*   **OLAP (ClickHouse)**: Digunakan khusus untuk analitik dan logging data besar. Dirancang untuk query agregasi kolom yang sangat cepat pada miliaran baris data tanpa membebani database operasional utama (OLTP).
+For analytical queries, reporting, and big data processing, Skalfa API integrates with ClickHouse (an OLAP database) via the `da` (Data Analytics) utility.
 
 ---
 
-## 2. Membaca Data Analitik (`da.query`)
+## 1. Why Separate OLTP and OLAP?
 
-Gunakan `da.query()` untuk mengambil data dari ClickHouse menggunakan query builder terabstraksi.
+*   **OLTP (PostgreSQL/MySQL)**: Optimized for fast transaction handling, row-level updates, and strict consistency. Not suitable for scanning millions of rows for reports.
+*   **OLAP (ClickHouse)**: Optimized for column-based storage, high compression, and extremely fast aggregation queries across billions of rows. Writes should be done in batches.
+
+---
+
+## 2. Writing Analytics Data
+
+Writing to ClickHouse should be done using batch inserts. Avoid inserting row-by-row as it creates too many parts on the ClickHouse storage engine.
 
 ```typescript
-import { da } from "@utils";
+// app/controllers/analytics/event.controller.ts
+import { ControllerContext } from 'elysia'
+import { da } from '@utils'
 
-const logs = await da.query()
-  .from('error_logs')
-  .where('level', 'ERROR')
-  .andWhere('created_at', '>', '2026-06-01')
-  .limit(100)
-  .get();
+export class EventController {
+  static async track(c: ControllerContext) {
+    await c.validation({
+      event_name: ["required"],
+      metadata:   ["required", "json"]
+    })
+
+    // Batch insert event
+    await da.insert("user_events", [
+      {
+        event_id:   Date.now().toString(36),
+        event_name: c.payload.event_name,
+        user_id:    c.user?.id || 0,
+        metadata:   JSON.stringify(c.payload.metadata),
+        created_at: new Date()
+      }
+    ])
+
+    c.responseSuccess(null, "Event tracked successfully")
+  }
+}
 ```
 
 ---
 
-## 3. Memasukkan Data (`da.insert`)
+## 3. Querying Analytics Data
 
-ClickHouse dirancang sangat efisien untuk proses memasukkan data dalam jumlah banyak sekaligus (*batch insert*). Hindari melakukan satu per satu insert (single insert) secara berulang.
+Querying ClickHouse returns raw data rows. Use standard SQL aggregations.
 
 ```typescript
-import { da } from "@utils";
+// app/controllers/analytics/report.controller.ts
+import { ControllerContext } from 'elysia'
+import { da } from '@utils'
 
-await da.insert({
-  table:  'error_logs',
-  format: 'JSONEachRow', // Format transfer data ClickHouse
-  values: [
-    { message: "Database timeout", level: "ERROR", created_at: new Date() },
-    { message: "Page not found",    level: "WARNING", created_at: new Date() }
-  ]
-});
+export class ReportController {
+  static async getSummary(c: ControllerContext) {
+    const rows = await da.query(`
+      SELECT 
+        event_name, 
+        count() as total_count 
+      FROM user_events 
+      GROUP BY event_name 
+      ORDER BY total_count DESC
+    `)
+
+    c.responseData(rows)
+  }
+}
 ```
-
----
-
-## 4. Praktek Terbaik (Best Practice)
-*   **Batching**: Selalu kumpulkan data analitik terlebih dahulu (misalnya di antrean memory atau queue) lalu lakukan insert secara massal (*batch*) setiap beberapa detik atau setelah mencapai jumlah baris tertentu.
-*   **Append-Only**: Data ClickHouse dirancang bersifat *append-only* (tambah saja). Hindari merancang skema analitik yang membutuhkan operasi `UPDATE` atau `DELETE` baris data secara berkala, karena operasi tersebut sangat mahal di ClickHouse.

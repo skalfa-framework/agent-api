@@ -1,61 +1,71 @@
-# Panduan Teknis: Antrean Tugas (Queue Worker)
+# Technical Guide: Queue Workers (`queue`)
 
-Queue di Skalfa API digunakan untuk menangani proses asynchronous dan background task (seperti pengiriman email, push notification, manipulasi berkas berat, atau integrasi pihak ketiga) yang tidak harus selesai di dalam siklus request HTTP utama.
+Skalfa API uses Redis to handle asynchronous background tasks (queues) via the `queue` utility. This prevents long-running operations from blocking the main HTTP thread.
 
 ---
 
-## 1. Menambahkan Job ke Antrean (`queue.add`)
+## 1. Adding Jobs to the Queue
 
-Untuk memasukkan pekerjaan ke dalam antrean, gunakan `queue.add`. Metode ini menerima nama antrean (queue name) dan objek payload data yang akan dikirim ke worker.
+Jobs are dispatched to the queue using the `queue.add` method. You must provide a job name and a payload.
 
 ```typescript
+// app/controllers/auth/register.controller.ts
+import { ControllerContext } from 'elysia'
 import { queue } from '@utils'
 
-// Menambahkan data ke antrean 'send-welcome-email'
-await queue.add('send-welcome-email', {
-  user_id: 12,
-  email:   'joko@email.com',
-  name:    'Joko Gunawan'
+export class RegisterController {
+  static async register(c: ControllerContext) {
+    await c.validation({
+      email:    ["required", "email"],
+      password: ["required"]
+    })
+
+    // Create user logic...
+    const user = { id: 1, email: c.payload.email };
+
+    // Dispatch welcome email to queue
+    await queue.add("send-welcome-email", {
+      userId: user.id,
+      email:  user.email
+    })
+
+    c.responseSuccess(user, "Registration successful")
+  }
+}
+```
+
+---
+
+## 2. Defining Queue Workers
+
+Workers are defined in `app/jobs/queues/` and process jobs asynchronously.
+
+```typescript
+// app/jobs/queues/email.worker.ts
+import { queue, mail } from '@utils'
+import { welcomeTemplate } from '@templates'
+
+queue.worker("send-welcome-email", async (job) => {
+  const { email, userId } = job.data;
+  
+  console.log(`✉️ Sending welcome email to user ${userId}...`);
+  
+  await mail.send({
+    to:      email,
+    subject: "Welcome to Skalfa!",
+    html:    welcomeTemplate("User")
+  });
+  
+  console.log(`✅ Welcome email sent to ${email}`);
 })
 ```
 
 ---
 
-## 2. Menulis Queue Worker (`queue.worker`)
+## 3. Running Workers
 
-Pekerjaan yang masuk ke dalam antrean akan diambil dan diproses secara terpisah oleh fungsi worker yang telah terdaftar.
-
-```typescript
-// src/jobs/queues/workers.ts
-import { queue, sendMail, renderMailTemplate } from '@utils'
-
-// Mendaftarkan pemroses untuk antrean 'send-welcome-email'
-queue.worker('send-welcome-email', async (payload, id) => {
-  const html = renderMailTemplate('welcome', { name: payload.name });
-  
-  await sendMail({
-    to:      payload.email,
-    subject: 'Selamat Datang di Skalfa!',
-    content: html
-  });
-  
-  console.log(`Queue ${id} sukses mengirim email ke ${payload.email}`);
-});
-```
-
----
-
-## 3. Menjalankan Queue Worker di Production
-
-Sama seperti cron, di environment production **queue worker wajib dijalankan sebagai proses terpisah** dari server HTTP utama agar antrean panjang atau kegagalan worker tidak memengaruhi performa respon API pengguna.
-
+In production, queue workers must be run in a separate process:
 ```bash
-# Menjalankan worker antrean secara mandiri di production
-bun start:queue
+bun run app/jobs/queues/workers.ts
 ```
-
----
-
-## 4. Praktek Terbaik (Best Practice)
-*   **Payload Sederhana**: Jaga agar payload data tetap kecil. Jangan mengirim objek database ORM yang besar atau fungsi callback. Kirimkan saja tipe data primitif seperti ID database (misal: `user_id: 12`), lalu biarkan worker memuat data terbaru dari database jika diperlukan.
-*   **Idempoten**: Pastikan logika worker bersifat idempoten (aman jika dijalankan lebih dari sekali untuk payload yang sama jika terjadi proses coba-ulang/retry otomatis).
+In development, workers are automatically started alongside the main server when running `npm run dev`.

@@ -1,48 +1,63 @@
-# Panduan Utilitas: Pembantu Migrasi Database (Migration) (`@utils`)
+# Utility Guide: Migration Helpers (`migration`)
 
-Skalfa ORM memperluas antarmuka pembangun tabel Knex (`Knex.CreateTableBuilder`) dengan menambahkan fungsi pembantu untuk standarisasi pembuatan kunci asing (*foreign keys*) dan penanganan kolom soft delete di berkas migrasi database.
-
-## 1. Kunci Asing Otomatis (`foreignIdFor`)
-
-Metode `table.foreignIdFor(tableName, column?)` menyederhanakan pembuatan kolom referensi kunci asing.
-*   **Tipe Data**: Otomatis membuat kolom bertipe `unsignedBigInteger`.
-*   **Indeks**: Otomatis menambahkan indeks ke kolom tersebut.
-*   **Relasi**: Otomatis membuat relasi rujukan ke tabel target (`references("id").on(tableName)`) dengan aksi penghapusan berskala (`onDelete("CASCADE")`).
-
-### Contoh Penggunaan:
-```typescript
-import { Knex } from "knex";
-
-export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTable("bookings", (table) => {
-    table.increments("id").primary();
-    
-    // Otomatis membuat kolom 'user_id' yang merujuk ke tabel 'users(id)'
-    table.foreignIdFor("users"); 
-    
-    // Atau tentukan nama kolom kustom (jika berbeda dari nama_tabel_id)
-    table.foreignIdFor("users", "customer_id");
-  });
-}
-```
+The `migration` utility provides custom extension methods to Knex's Schema Builder, simplifying common table definitions.
 
 ---
 
-## 2. Penanda Hapus Logis (`softDelete`)
+## 1. Custom Table Helpers
 
-Metode `table.softDelete(column?)` membuat kolom penanda penghapusan logis secara standar.
-*   **Tipe Data**: Membuat kolom bertipe `timestamp` nullable.
-*   **Nama Kolom**: Default `"deleted_at"`.
+These helpers are available on the Knex `TableBuilder` instance in your migration files.
 
-### Contoh Penggunaan:
+### A. Soft Delete Column (`table.softDelete()`)
+Adds a nullable `deleted_at` timestamp column to support soft deleting records.
 ```typescript
-export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTable("bookings", (table) => {
-    table.increments("id").primary();
-    // ... kolom lainnya ...
+// database/migrations/2026_06_create_users_table.ts
+import { Knex } from "knex";
 
-    table.softDelete(); // Hasil: Membuat kolom 'deleted_at'
+export async function up(knex: Knex): Promise<void> {
+  await knex.schema.createTable("users", (table) => {
+    table.increments("id").primary();
+    table.string("name");
+    
+    // Adds deleted_at timestamp
+    table.softDelete();
   });
 }
 ```
-*Catatan untuk Agen: Selalu gunakan pembantu `foreignIdFor` dan `softDelete` saat menulis berkas migrasi tabel baru guna menjaga konsistensi skema relasi database.*
+
+### B. Foreign ID Column (`table.foreignIdFor(targetTable, columnName?)`)
+Adds an unsigned integer foreign key column and sets up the cascading foreign key constraint automatically.
+```typescript
+// database/migrations/2026_06_create_posts_table.ts
+import { Knex } from "knex";
+
+export async function up(knex: Knex): Promise<void> {
+  await knex.schema.createTable("posts", (table) => {
+    table.increments("id").primary();
+    table.string("title");
+    
+    // Adds 'user_id' column referencing 'id' on 'users' table
+    // with ON DELETE CASCADE and ON UPDATE CASCADE
+    table.foreignIdFor("users");
+    
+    // Custom column name
+    table.foreignIdFor("users", "author_id");
+  });
+}
+```
+---
+
+## 2. Standard Migrations Workflow
+
+1.  **Generate Migration**:
+    ```bash
+    skalfa make:migration create_users_table
+    ```
+2.  **Run Migrations**:
+    ```bash
+    skalfa migrate
+    ```
+3.  **Fresh Reset (Rollback & Re-run)**:
+    ```bash
+    skalfa migrate:fresh
+    ```

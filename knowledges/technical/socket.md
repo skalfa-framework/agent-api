@@ -1,74 +1,85 @@
-# Panduan Teknis: WebSocket Realtime (Socket)
+# Technical Guide: WebSockets (`socket`)
 
-Skalfa API menyediakan layanan WebSocket berbasis Socket.IO untuk mengirimkan update data, status, atau notifikasi secara real-time ke client tanpa menggunakan polling.
+Skalfa API provides real-time, bi-directional communication using Socket.IO via the `socket` utility.
 
 ---
 
-## 1. Menjalankan Socket Server
+## 1. Initializing the Socket Server
 
-Socket server berjalan pada port terpisah dari HTTP server utama. Port dikonfigurasi dan dinyalakan menggunakan `socket.start`.
+The socket server is started alongside the main HTTP server in `app/app.ts`:
 
 ```typescript
-// src/jobs/sockets/workers.ts
+// app/app.ts
+import { Elysia } from 'elysia'
 import { socket } from '@utils'
 
-// Menjalankan socket server pada port 4001
-socket.start(4001)
+const app = new Elysia()
+// ... HTTP setup
+
+// Start socket server on port 3001
+socket.start(app, 3001)
 ```
 
 ---
 
-## 2. Registrasi Event Socket
+## 2. Registering Socket Events
 
-Event didaftarkan menggunakan `socket.event.on`. Anda dapat mendaftarkan event publik (bebas akses) atau event privat yang membutuhkan verifikasi token masuk (`auth()`).
+Socket events are registered in `app/jobs/sockets/` and can be grouped by namespace.
 
 ```typescript
+// app/jobs/sockets/chat.socket.ts
 import { socket } from '@utils'
 
-// 1. Event Publik (Tanpa Autentikasi)
-socket.event.on('ping', (client, data) => {
-  socket.send(client, 'pong', { time: Date.now() })
-})
+// Public namespace
+socket.on("connection", (io, client) => {
+  console.log(`🔌 Client connected: ${client.id}`);
 
-// 2. Event Terproteksi (Wajib Login)
-// Di bawah kap, auth() memverifikasi JWT token sebelum memproses handler
-socket.event.auth().on('subscribe-chat', (client, data) => {
-  const user = client.data.user; // Mengakses data user yang login
-  socket.join(client, `chat-room:${data.room_id}`);
-})
-```
+  // Listen to custom event
+  client.on("send-message", (payload) => {
+    // Broadcast message to all connected clients
+    io.emit("message-received", {
+      sender:    client.id,
+      message:   payload.message,
+      timestamp: new Date()
+    });
+  });
 
----
-
-## 3. Mengirimkan Event (Emit)
-
-Skalfa menyediakan helper terpadu untuk menyebarkan (*broadcast*) event ke client:
-
-```typescript
-// A. Kirim ke satu client tertentu
-socket.send(client, 'message:new', { text: "Halo!" })
-
-// B. Kirim ke semua client yang tergabung di room tertentu
-socket.room('chat-room:102').emit('message:new', { text: "Halo semua!" })
-
-// C. Kirim ke seluruh client yang terhubung secara global
-socket.emit('announcement', { text: "Server akan maintenance" })
-```
-
----
-
-## 4. Integrasi dengan Lapisan Lain (API / Queue)
-Pola arsitektur terbaik di Skalfa adalah menggunakan **Queue Worker** untuk memproses transaksi berat, lalu memicu pengiriman notifikasi visual ke layar user menggunakan **Socket**:
-
-```typescript
-// Di dalam Queue Worker
-queue.worker('payment-process', async (payload) => {
-  // ... proses pembayaran ...
-  
-  // Kirim notifikasi realtime ke layar user
-  socket.room(`user:${payload.user_id}`).emit('payment:success', {
-    booking_id: payload.booking_id
+  client.on("disconnect", () => {
+    console.log(`❌ Client disconnected: ${client.id}`);
   });
 })
 ```
-*Catatan untuk Agen: Anggap socket hanya sebagai channel event trigger (misal: memberitahu client bahwa ada data baru). Hindari mengirim data besar atau melakukan logika bisnis berat di dalam socket handler.*
+
+---
+
+## 3. Authenticating Socket Connections
+
+You can protect socket connections using middleware during connection:
+
+```typescript
+socket.use((client, next) => {
+  const token = client.handshake.auth.token;
+  if (!token) {
+    return next(new Error("Authentication error: Token missing"));
+  }
+  
+  // Verify token logic...
+  next();
+})
+```
+
+---
+
+## 4. Emitting Events from Controllers or Services
+
+You can emit real-time events from anywhere in your backend (e.g., from a controller or queue worker):
+
+```typescript
+import { socket } from '@utils'
+
+// Emit to all clients in the "orders" room
+socket.to("orders").emit("order-status-updated", {
+  orderId: 123,
+  status:  "shipped"
+});
+```

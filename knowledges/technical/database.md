@@ -1,87 +1,72 @@
-# Panduan Teknis: Database & Transaksi
+# Technical Guide: Database & Transactions (`database`)
 
-Skalfa API menyediakan ORM ringan (`skalfa-orm`) yang dibangun di atas Knex.js. ORM ini tidak menggantikan Knex, melainkan memperluasnya dengan struktur model, helper query, dan integrasi langsung dengan `ControllerContext`. Developer tetap memiliki kendali penuh dan dapat menggunakan seluruh API Knex.js kapan pun dibutuhkan.
-
----
-
-## 1. Query Dasar dengan ORM
-
-Metode `query()` memulai query berbasis model. Metode `resolve(c)` secara otomatis mengikat parameter query dari `ControllerContext` (halaman, limit, pencarian, pengurutan, filter).
-
-```typescript
-import { User } from '@models'
-
-// Mengambil data terfilter & terpaginasi otomatis
-const users = await User.query().resolve(c)
-
-c.responseData(users.data, users.total)
-```
+Skalfa API uses Knex.js as the query builder and database abstraction layer. Transactions and raw queries are handled via the `db` utility.
 
 ---
 
-## 2. Membuat dan Menyimpan Record
+## 1. Basic Querying
 
-ORM mendukung pendekatan instance-based maupun static helper:
-
-```typescript
-// Pendekatan Instance
-const record = new User()
-record.name = "Joko Gunawan"
-await record.save()
-
-// Pendekatan Static Helper
-const record = await User.create({
-  name: "Joko Gunawan"
-})
-```
-
----
-
-## 3. Menggunakan Knex Secara Langsung
-
-Untuk query kompleks, join tabel yang berat, agregasi database, atau operasi khusus, Anda dapat menggunakan Knex secara langsung melalui `db.query` (tanpa melewati model).
+For standard database operations, prefer using the Model-level query builder. However, for complex queries, join operations, or performance-critical tasks, you can use the raw `db` instance:
 
 ```typescript
 import { db } from '@utils'
 
-const activeUsers = await db.query
-  .select('users.*', 'roles.name as role_name')
-  .from('users')
-  .join('roles', 'roles.id', 'users.role_id')
-  .where('users.status', 'active')
-  .orderBy('users.created_at', 'desc')
+// Simple select
+const activeUsers = await db("users")
+  .where("status", "active")
+  .select("id", "name", "email");
+
+// Joins
+const userRoles = await db("users")
+  .join("user_roles", "users.id", "user_roles.user_id")
+  .join("roles", "user_roles.role_id", "roles.id")
+  .select("users.name", "roles.name as role_name");
 ```
 
 ---
 
-## 4. Transaksi Database (Transactions)
+## 2. Transactions
 
-Untuk memastikan konsistensi data saat melakukan beberapa operasi tulis berturut-turut, wajib menggunakan transaksi (`db.transaction()`) yang dibungkus dengan blok try-catch.
+When executing multiple insert, update, or delete operations that depend on each other, you **MUST** wrap them in a database transaction to ensure data integrity (ACID).
 
 ```typescript
 import { db } from '@utils'
-import { Booking } from '@models'
+import { User, Wallet } from '@models'
 
-const trx = await db.transaction()
+export class UserRegistrationService {
+  static async register(payload: any) {
+    // Start transaction
+    const trx = await db.transaction();
 
-try {
-  // Simpan data utama beserta relasinya di dalam transaksi
-  const record = await new Booking().pump(c.body, { trx })
-  
-  // Lakukan operasi lain jika diperlukan...
-  
-  await trx.commit()
-  c.responseSaved(record)
-} catch (err) {
-  await trx.rollback()
-  c.responseError(err as Error, 'Create Booking')
+    try {
+      // 1. Create User
+      const user = await new User().pump(payload, { trx });
+
+      // 2. Create Wallet for User
+      const wallet = await new Wallet().pump({
+        user_id: user.id,
+        balance: 0
+      }, { trx });
+
+      // Commit transaction if all succeeded
+      await trx.commit();
+      
+      return { user, wallet };
+    } catch (error) {
+      // Rollback transaction if any operation failed
+      await trx.rollback();
+      throw error;
+    }
+  }
 }
 ```
 
 ---
 
-## 5. Migrasi & Seeder
+## 3. Raw Queries
 
-*   **Database Migration**: Mengelola perubahan skema database secara versioned. Gunakan pembantu `foreignIdFor` dan `softDelete` untuk standarisasi pembuatan kolom.
-*   **Database Seeder**: Berfungsi untuk mengisi data awal (master data seperti role, permission) maupun data tiruan untuk simulasi pengembangan.
-*   **OLAP Migration**: Digunakan khusus untuk skema Clickhouse (analitik) yang terpisah dari database transaksional utama.
+Avoid raw SQL queries unless absolutely necessary. If required, use `db.raw`:
+
+```typescript
+const result = await db.raw("SELECT COUNT(*) as total FROM users WHERE created_at > ?", [someDate]);
+```

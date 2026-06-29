@@ -1,48 +1,49 @@
-# Panduan Utilitas: Rute CRUD Otomatis (Route) (`@utils`)
+# Utility Guide: Route Grouping (`route`)
 
-Utilitas `route` digunakan untuk menyederhanakan pendaftaran endpoint API di Skalfa API. Jika controller Anda mengikuti pola RESTful standar (memiliki metode `index`, `store`, `show`, `update`, dan `destroy`), Anda dapat mendaftarkan kelima rute tersebut sekaligus dalam satu baris menggunakan `route.api`.
-
-## 1. Pemetaan Rute Otomatis (`route.api`)
-
-Fungsi `route.api(app, basePath, controller)` secara otomatis mendaftarkan rute grup berikut di Elysia:
-
-| Method HTTP | Path Rute | Method Controller | Aksi / Tujuan |
-|-------------|-----------|-------------------|---------------|
-| `GET`       | `/`       | `controller.index` | Mengambil daftar data (list) |
-| `POST`      | `/`       | `controller.store` | Menyimpan data baru (create) |
-| `GET`       | `/:id`    | `controller.show`  | Mengambil satu detail data |
-| `PUT`       | `/:id`    | `controller.update`| Memperbarui data lama |
-| `DELETE`    | `/:id`    | `controller.destroy`| Menghapus data (soft delete) |
+The `route` utility provides helpers to map endpoints to controllers and register resources.
 
 ---
 
-## 2. Contoh Penggunaan di Rute Utama (`app/routes.ts`)
+## 1. Route Grouping
+
+Group routes using `app.group` to organize endpoints:
 
 ```typescript
-import { Elysia } from "elysia";
-import { route } from "@utils";
-import { UserController } from "@controllers";
+// app/routes/index.ts
+import { Elysia } from 'elysia'
+import { AuthController } from '@controllers'
 
-export const apiRoutes = (app: Elysia) => {
-  // Otomatis mendaftarkan 5 endpoint RESTful di bawah path "/users"
-  return route.api(app, "/users", UserController);
-};
+export const routes = (app: Elysia) => app.group('/api', (route) => {
+  route.post('/login', AuthController.login);
+  
+  return route;
+})
 ```
 
 ---
 
-## 3. Menambahkan Rute Kustom Tambahan
-Jika sebuah modul memerlukan endpoint khusus di luar 5 aksi CRUD standar, Anda dapat mendaftarkannya secara manual menggunakan grup Elysia biasa:
+## 2. Resource Routing (`api`)
+
+The `api` helper automatically maps standard RESTful CRUD endpoints to a controller class:
 
 ```typescript
-export const bookingRoutes = (app: Elysia) => {
-  return app.group("/bookings", (group) => group
-    // 1. Daftarkan rute khusus terlebih dahulu
-    .put("/:id/approve", BookingController.approve)
-    
-    // 2. Daftarkan rute CRUD otomatis setelahnya
-    .use((g) => route.api(g, "/", BookingController))
-  );
-};
+import { Elysia } from 'elysia'
+import { api } from '@utils'
+import { UserController } from '@controllers'
+
+export const routes = (app: Elysia) => app.group('/api', (route) => {
+  // Registers all CRUD endpoints for /users
+  api(route, '/users', UserController);
+  
+  return route;
+})
 ```
-*Catatan untuk Agen: Selalu gunakan `route.api` untuk pendaftaran rute CRUD standar guna mengurangi baris kode boilerplate rute di Elysia.*
+
+### Auto-Mapped Endpoints:
+| Method | Path | Controller Method | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/users` | `UserController.index` | List records |
+| `POST` | `/users` | `UserController.store` | Create record |
+| `GET` | `/users/:id` | `UserController.show` | Show single record |
+| `PUT`/`PATCH` | `/users/:id` | `UserController.update` | Update record |
+| `DELETE` | `/users/:id` | `UserController.destroy` | Delete record |

@@ -1,44 +1,44 @@
-# Panduan Utilitas: Pencatatan Log (Logger) (`@utils`)
+# Utility Guide: Logging (`logger`)
 
-Utilitas `logger` digunakan untuk mencetak pesan log berwarna di konsol terminal serta menulis log kesalahan secara otomatis ke dalam berkas fisik di server Skalfa API.
-
-## 1. Pencatatan Konsol Berwarna
-
-Pesan di konsol terminal akan diawali dengan label kategori yang berwarna-warni sesuai tipenya untuk mempermudah monitoring:
-
-*   **`logger.start(msg)`**: Label hijau `[START]`, digunakan saat server pertama kali dinyalakan.
-*   **`logger.info(msg)`**: Label sian `[INFO]`, untuk informasi aktivitas umum.
-*   **`logger.warning(msg)`**: Label kuning `[WARNING]`, untuk pesan peringatan sistem.
-*   **`logger.queue(msg)`**: Label biru `[QUEUE]`, untuk monitoring antrean tugas background.
-*   **`logger.cron(msg)`**: Label magenta `[CRON]`, untuk eksekusi tugas terjadwal.
-*   **`logger.socket(msg)`**: Label biru `[SOCKET]`, untuk aktivitas koneksi WebSocket.
+The `logger` utility provides a structured logging system to track application events, SQL queries, and error stack traces.
 
 ---
 
-## 2. Pencatatan Error ke Berkas (`logger.error`)
+## 1. Log Levels
 
-Mencatat kesalahan ke konsol dengan warna merah `[ERROR]` dan otomatis menulis log tersebut ke berkas fisik `storage/logs/error.log` dalam format JSON Line (JSONL) untuk audit kesalahan produksi.
+Supported log levels:
+*   `info`: General operational messages.
+*   `warn`: Warnings about potential issues.
+*   `error`: Critical errors that require attention.
+*   `debug`: Detailed debugging information.
+
+---
+
+## 2. Usage
+
+You can import the `logger` utility to log events from anywhere in the application:
 
 ```typescript
-import { logger } from "@utils";
+import { logger } from '@utils'
 
+// Logging info
+logger.info("Server started successfully on port 3000");
+
+// Logging warnings
+logger.warn("Redis connection lost. Retrying...", { attempt: 3 });
+
+// Logging errors with context and stack trace
 try {
-  // ... operasi bermasalah ...
+  throw new Error("Database connection timed out");
 } catch (err) {
-  const error = err as Error;
-  
-  // Mencatat ke konsol dan menulis ke storage/logs/error.log
-  logger.error(error.message, {
-    feature:   "BookingController.store", // Lokasi fitur yang error
-    reference: "Booking ID #1092"         // Referensi data terkait
-  });
+  logger.error("Failed to connect to database", err);
 }
 ```
 
 ---
 
-## 3. Contoh Tampilan Berkas `error.log`
-```json
-{"at":"2026-06-28T21:58:00.000Z","error":"Database connection timeout","feature":"BookingController.store","reference":"Booking ID #1092"}
-```
-*Catatan untuk Agen: Selalu tangkap error menggunakan try-catch di controller dan catat kesalahannya menggunakan `logger.error` sebelum mengirimkan respon 500 ke klien.*
+## 3. Log Output
+
+Logs are written to two destinations:
+1.  **Console**: Formatted for readability in development.
+2.  **Log File**: Saved under `storage/logs/` as JSON lines (e.g. `storage/logs/error.log` and `storage/logs/combined.log`) in production.

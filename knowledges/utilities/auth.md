@@ -1,61 +1,64 @@
-# Panduan Utilitas: Autentikasi Sesi (Auth) (`@utils`)
+# Utility Guide: Authentication (`auth`)
 
-Utilitas `auth` digunakan untuk mengelola sesi pengguna, pembuatan JWT token, verifikasi token email, dan revalidasi cache izin di backend Skalfa API.
-
-## 1. Pembuatan & Verifikasi Token Sesi
-
-*   **`auth.createAccessToken(userId, request)`**:
-    *   Membuat token sesi baru acak sepanjang 20 karakter.
-    *   Mencatat sesi aktif ke dalam tabel `user_sessions` (menyimpan data browser, IP, dan waktu kadaluwarsa).
-    *   Mengembalikan objek token terenkripsi.
-*   **`auth.verifyAccessToken(token, request)`**:
-    *   Memverifikasi validitas token sesi (mencocokkan ke database atau cache sesi aktif).
-    *   Mendeteksi jika token sudah kadaluwarsa atau telah dicabut.
-*   **`auth.revokeAccessToken(token)`**:
-    *   Menghapus sesi token aktif dari tabel `user_sessions` (proses logout).
+The `auth` utility provides token-based session management, JWT operations, and email verification token handling.
 
 ---
 
-## 2. Token Verifikasi Email & Reset Sandi
+## 1. Access Token Management
 
-*   **`auth.createUserMailToken(userId, email, type)`**:
-    *   Membuat token unik sekali pakai untuk keperluan verifikasi email atau reset kata sandi.
-    *   Tipe yang didukung: `"verify_email"` atau `"reset_password"`.
-*   **`auth.verifyUserMailToken(token, type)`**:
-    *   Memverifikasi token email yang dikirimkan oleh pengguna.
+Skalfa API uses database-backed personal access tokens. The token returned to the client is formatted as `id|plainToken`.
 
----
-
-## 3. Revalidasi Izin Pengguna (Cache Permission)
-
-*   **`auth.revalidateUserPermissions(userId)`**:
-    *   Memperbarui cache daftar hak akses (permissions) untuk user tertentu agar langsung sinkron dengan database jika ada perubahan role/hak akses.
-*   **`auth.revalidateUserPermissionsByRole(roleId)`**:
-    *   Memperbarui cache daftar hak akses untuk seluruh user yang memiliki role tersebut secara massal.
-
----
-
-## 4. Contoh Penggunaan di Controller
-
+### A. Creating an Access Token
+Generates a new access token and saves its hash to the database.
 ```typescript
-import { auth, ControllerContext } from "@utils";
+import { auth } from '@utils'
 
-export class AuthController {
-  static async login(c: ControllerContext) {
-    // ... validasi & pencocokan password ...
-    
-    // Buat sesi baru
-    const { token } = await auth.createAccessToken(user.id, c.request);
-    
-    c.responseSuccess({ token }, "Login sukses");
-  }
+const { token, record } = await auth.createAccessToken(user.id);
+// token is "1|abc123xyz..." (send this to the client)
+```
 
-  static async logout(c: ControllerContext) {
-    const token = c.request.headers.get("Authorization")?.replace("Bearer ", "");
-    if (token) {
-      await auth.revokeAccessToken(token);
-    }
-    c.responseSuccess([], "Logout sukses");
-  }
+### B. Verifying an Access Token
+Validates the plain token against the hash stored in the database. Returns the session and user if valid.
+```typescript
+import { auth } from '@utils'
+
+const session = await auth.verifyAccessToken(tokenString);
+if (!session) {
+  throw new Error("Unauthorized");
+}
+
+const { user, token } = session;
+```
+
+### C. Revoking an Access Token
+Deletes the token record from the database.
+```typescript
+import { auth } from '@utils'
+
+await auth.revokeAccessToken(tokenId);
+```
+
+---
+
+## 2. Email Mail Tokens
+
+Used for temporary operations like email verification or password resets. These tokens are time-bound.
+
+### A. Creating a Mail Token
+```typescript
+import { auth } from '@utils'
+
+const { token } = await auth.createUserMailToken(user.id);
+// Send this token to the user's email
+```
+
+### B. Verifying a Mail Token
+Verifies the token and ensures it has not expired.
+```typescript
+import { auth } from '@utils'
+
+const isValid = await auth.verifyUserMailToken(user.id, tokenString);
+if (!isValid) {
+  throw new Error("Invalid or expired token");
 }
 ```

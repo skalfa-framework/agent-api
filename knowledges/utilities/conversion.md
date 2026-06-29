@@ -1,60 +1,65 @@
-# Panduan Utilitas: Konversi Format (Conversion) (`@utils`)
+# Utility Guide: Case Conversion (`conversion`)
 
-Utilitas `conversion` di backend menyediakan metode pemformatan yang identik dengan frontend untuk menjaga konsistensi manipulasi string, nominal mata uang, dan tanggal di kedua sisi aplikasi Skalfa.
-
-## 1. Manipulasi Huruf String
-
-*   **Snake Case (`strSnake`)**:
-    ```typescript
-    conversion.strSnake("HelloWorld"); // Hasil: "hello_world"
-    ```
-*   **Slug Case (`strSlug`)**:
-    ```typescript
-    conversion.strSlug("Hello World"); // Hasil: "hello-world"
-    ```
-*   **Camel Case (`strCamel`)**:
-    ```typescript
-    conversion.strCamel("hello_world"); // Hasil: "helloWorld"
-    ```
-*   **Pascal Case (`strPascal`)**:
-    ```typescript
-    conversion.strPascal("hello_world"); // Hasil: "HelloWorld"
-    ```
-*   **Bentuk Jamak (`strPlural`)**:
-    ```typescript
-    conversion.strPlural("category"); // Hasil: "categories"
-    ```
-*   **Bentuk Tunggal (`strSingular`)**:
-    ```typescript
-    conversion.strSingular("booking_payments"); // Hasil: "BookingPayments"
-    ```
+The `conversion` utility provides functions to transform string casing (snake_case, camelCase, PascalCase, etc.) and singular/plural forms.
 
 ---
 
-## 2. Pemformatan Mata Uang (`currency`)
+## 1. Case Conversions
 
-Memformat angka nominal menjadi mata uang Rupiah secara standar.
-
+### A. Snake Case (`strSnake`)
+Converts camelCase, PascalCase, or space-separated strings to snake_case.
 ```typescript
-import { conversion } from "@utils";
+import { conversion } from '@utils'
 
-conversion.currency(150000); // Hasil: "Rp 150.000"
+conversion.strSnake("MyVariableName"); 
+// => "my_variable_name"
+```
+
+### B. Camel Case (`strCamel`)
+Converts snake_case, kebab-case, or space-separated strings to camelCase.
+```typescript
+import { conversion } from '@utils'
+
+conversion.strCamel("my_variable_name");
+// => "myVariableName"
+```
+
+### C. Pascal Case (`strPascal`)
+Converts strings to PascalCase.
+```typescript
+import { conversion } from '@utils'
+
+conversion.strPascal("my variable_name");
+// => "MyVariableName"
+```
+
+### D. Slug Case (`strSlug`)
+Converts strings to url-friendly slugs, removing special characters.
+```typescript
+import { conversion } from '@utils'
+
+conversion.strSlug("Hello World!");
+// => "hello-world"
 ```
 
 ---
 
-## 3. Pemformatan Tanggal Lokal (`date`)
+## 2. Pluralization & Singularization
 
-Memformat string tanggal menggunakan standardisasi `Intl.DateTimeFormat` lokalisasi Indonesia (`id-ID`).
-
+### A. Plural Form (`strPlural`)
+Converts an English word to its plural form.
 ```typescript
-import { conversion } from "@utils";
+import { conversion } from '@utils'
 
-const isoDate = "2026-06-28T12:00:00.000Z";
+conversion.strPlural("product");
+// => "products"
+```
 
-// Format default: "DD MMM YYYY"
-conversion.date(isoDate); // Hasil: "28 Jun 2026"
+### B. Singular Form (`strSingular`)
+Converts an English word to its singular form.
+```typescript
+import { conversion } from '@utils'
 
-// Format kustom jam dan menit
-conversion.date(isoDate, "YYYY-MM-DD HH:mm"); // Hasil: "2026-06-28 12:00"
+conversion.strSingular("products");
+// => "product"
 ```

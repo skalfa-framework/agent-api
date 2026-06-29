@@ -1,31 +1,31 @@
-# Registri Pengetahuan Skalfa (Knowledge Registry - Backend)
+# Skalfa Knowledge Registry (Backend)
 
-Sebelum membuat rencana implementasi (`Stage 1 — Planning`), agen **wajib membaca indeks ini** dan hanya membuka berkas dokumentasi spesifik yang relevan dengan fitur yang akan dibuat.
-
----
-
-## 1. Fitur Teknis (Technical Services)
-
-*   [Layanan API (API Service)](file:///d:/_skalfa/agent-backend/knowledges/technical/api.md): Pola routing group, delegasi ke controller, dan representasi model.
-*   [Pemasangan Middleware](file:///d:/_skalfa/agent-backend/knowledges/technical/middleware.md): Penggunaan middleware global vs lokal (grup rute), serta urutan eksekusinya.
-*   [Database & Transaksi](file:///d:/_skalfa/agent-backend/knowledges/technical/database.md): ORM query, penyimpanan record, penggunaan raw Knex, dan pengelolaan transaksi database (`db.transaction`).
-*   [Penyimpanan Berkas (Storage)](file:///d:/_skalfa/agent-backend/knowledges/technical/storage.md): Folder public vs private, perlindungan hak akses berkas privat, serta fungsi `uploadFile` & `deleteFile`.
-*   [Layanan Email (Email)](file:///d:/_skalfa/agent-backend/knowledges/technical/email.md): Konfigurasi SMTP, fungsi `sendMail`, dan rendering layout/template email stub.
-*   [Tugas Terjadwal (Cron Job)](file:///d:/_skalfa/agent-backend/knowledges/technical/cron.md): Pendaftaran `cron.add` dan aturan runtime terpisah di development vs production.
-*   [Antrean Tugas (Queue Worker)](file:///d:/_skalfa/agent-backend/knowledges/technical/queue.md): Penambahan job via `queue.add` dan penulisan pemroses asinkron via `queue.worker`.
-*   [WebSocket Realtime (Socket)](file:///d:/_skalfa/agent-backend/knowledges/technical/socket.md): Socket.IO server `socket.start`, registrasi event dengan/tanpa auth, pemancaran (`emit`, `send`, `room`), dan integrasi dengan queue.
-*   [Analitik Data (OLAP Clickhouse)](file:///d:/_skalfa/agent-backend/knowledges/technical/da.md): Mengapa memisahkan OLTP dan OLAP, query Clickhouse (`da.query`), dan pengisian batch data analitik (`da.insert`).
+Before creating any implementation plan (`Stage 1 — Planning`), the agent **MUST read this registry** and only open the specific documentation files relevant to the feature being built.
 
 ---
 
-## 2. Utilitas Inti (Core Utilities)
+## 1. Technical Services
 
-*   [ORM & Model](file:///d:/_skalfa/agent-backend/knowledges/utilities/orm.md): Pendefinisian model, decorator `@Field`, `@SoftDelete`, `@Attribute`, relasi, hook model, penyaringan relasi (`whereHas`), dan filter operator.
-*   [Pengendali (Controller Utility)](file:///d:/_skalfa/agent-backend/knowledges/utilities/controller.md): Pengambilan query `c.getQuery`, validasi payload `c.validation`, pengiriman respons standar (`c.responseData`, `c.responseSaved`, dsb).
-*   [Aturan Validasi (Validation)](file:///d:/_skalfa/agent-backend/knowledges/utilities/validation.md): Cara memicu validasi dan daftar lengkap aturan validasi yang didukung Skalfa.
-*   [Hak Akses & Pengaman (Permission)](file:///d:/_skalfa/agent-backend/knowledges/utilities/permission.md): Pendaftaran izin modul dan pengamanan metode controller via `guard`.
-*   [Autentikasi Sesi (Auth)](file:///d:/_skalfa/agent-backend/knowledges/utilities/auth.md): Pembuatan/verifikasi JWT token, token email sekali pakai, serta revalidasi cache permission.
-*   [Caching (Redis)](file:///d:/_skalfa/agent-backend/knowledges/utilities/caching.md): Pembuatan key cache, operasi `cache.get`/`set`/`clear`, dan pola cache-aside.
-*   [Konversi Format (Converting)](file:///d:/_skalfa/agent-backend/knowledges/utilities/converting.md): Fungsi pemformatan huruf string, nominal Rupiah, dan tanggal lokalisasi `id-ID`.
-*   [Enkripsi Data (Encrypting)](file:///d:/_skalfa/agent-backend/knowledges/utilities/encrypting.md): Enkripsi/dekripsi dua arah (AES, TripleDES) dan hash satu arah (SHA256, SHA512, MD5).
-*   [Pembantu Migrasi (Migration)](file:///d:/_skalfa/agent-backend/knowledges/utilities/migration.md): Penggunaan `table.foreignIdFor` dan `table.softDelete` pada berkas migrasi database.
+*   [API Service](file:///d:/_skalfa/agent-api/knowledges/technical/api.md): Routing patterns, controller delegation, and model representation.
+*   [Middleware](file:///d:/_skalfa/agent-api/knowledges/technical/middleware.md): Global vs. local (route group) middleware usage, and execution order.
+*   [Database & Transactions](file:///d:/_skalfa/agent-api/knowledges/technical/database.md): ORM queries, record storage, raw Knex usage, and transaction management (`db.transaction`).
+*   [File Storage](file:///d:/_skalfa/agent-api/knowledges/technical/storage.md): Public vs. private folders, private file access protection, and `uploadFile` & `deleteFile` helpers.
+*   [Email Service](file:///d:/_skalfa/agent-api/knowledges/technical/email.md): SMTP configuration, `sendMail` function, and rendering layout/email templates.
+*   [Cron Jobs](file:///d:/_skalfa/agent-api/knowledges/technical/cron.md): Registering tasks via `cron.add` and separate runtime rules for development vs. production.
+*   [Queue Workers](file:///d:/_skalfa/agent-api/knowledges/technical/queue.md): Adding jobs via `queue.add` and writing asynchronous processors via `queue.worker`.
+*   [WebSockets](file:///d:/_skalfa/agent-api/knowledges/technical/socket.md): Socket.IO server setup via `socket.start`, event registration with/without auth, emitting (`emit`, `send`, `room`), and queue integration.
+*   [Data Analytics (OLAP Clickhouse)](file:///d:/_skalfa/agent-api/knowledges/technical/da.md): Purpose of separating OLTP and OLAP, Clickhouse queries (`da.query`), and batch inserting analytics data (`da.insert`).
+
+---
+
+## 2. Core Utilities
+
+*   [ORM & Model](file:///d:/_skalfa/agent-api/knowledges/utilities/orm.md): Model definition, `@Field`, `@SoftDelete`, `@Attribute` decorators, relations, model hooks, relation filtering (`whereHas`), and filter operators.
+*   [Controller Utility](file:///d:/_skalfa/agent-api/knowledges/utilities/controller.md): Extracting query parameters with `c.getQuery`, validating payloads with `c.validation`, and sending standard responses (`c.responseData`, `c.responseSaved`, etc.).
+*   [Validation Rules](file:///d:/_skalfa/agent-api/knowledges/utilities/validation.md): How to trigger validation and the list of supported validation rules in Skalfa.
+*   [Permissions (RBAC)](file:///d:/_skalfa/agent-api/knowledges/utilities/permission.md): Registering module permissions and securing controller methods via `guard`.
+*   [Authentication & Session (Auth)](file:///d:/_skalfa/agent-api/knowledges/utilities/auth.md): JWT token generation/verification, temporary email verification tokens, and permission cache revalidation.
+*   [Caching (Redis)](file:///d:/_skalfa/agent-api/knowledges/utilities/caching.md): Cache key generation, `cache.get`/`set`/`clear` operations, and cache-aside patterns.
+*   [Converting](file:///d:/_skalfa/agent-api/knowledges/utilities/converting.md): Formatting string cases, Rupiah currency, and localized dates (`id-ID`).
+*   [Encrypting](file:///d:/_skalfa/agent-api/knowledges/utilities/encrypting.md): Two-way encryption (AES, TripleDES) and one-way hashing (SHA256, SHA512, MD5).
+*   [Migration Helpers](file:///d:/_skalfa/agent-api/knowledges/utilities/migration.md): Using `table.foreignIdFor` and `table.softDelete` in database migration files.

@@ -1,30 +1,30 @@
-# Panduan Teknis: Layanan API (API Service)
+# Technical Guide: API Service (`api`)
 
-Layanan API di Skalfa API memisahkan tanggung jawab antara routing (pemetaan endpoint), controller (pengolah request/response), dan model (representasi data).
+The API service in Skalfa API separates responsibilities between routing (endpoint mapping), controllers (request/response handling), and models (data representation).
 
 ---
 
-## 1. Rute (Route)
+## 1. Routes
 
-Route hanya bertugas mendefinisikan HTTP method dan path API. Di Skalfa API, route dikelompokkan menggunakan `group` agar namespace jelas dan mudah dikembangkan.
+Routes are only responsible for defining the HTTP method and the API path. In Skalfa API, routes are grouped using `.group` to keep the namespace clear and maintainable.
 
 ```typescript
-// src/routes/index.ts
+// app/routes/index.ts
 import { Elysia } from 'elysia'
 import { api, Middleware } from '@utils'
 import { AuthController, UserController } from '@controllers'
 
 export const routes = (app: Elysia) => app.group('/api', (route) => {
-  // Rute publik
+  // Public route
   route.post('/login', AuthController.login)
 
-  // Menggunakan middleware otentikasi untuk rute di bawahnya
+  // Apply authentication middleware for routes below
   route.use(Middleware.Auth)
 
-  // Rute terproteksi
+  // Protected route
   route.get('/me', AuthController.me)
 
-  // Rute CRUD otomatis untuk User
+  // Automatic CRUD routes for User
   api(route, '/users', UserController)
 
   return route
@@ -33,85 +33,64 @@ export const routes = (app: Elysia) => app.group('/api', (route) => {
 
 ---
 
-## 2. Pengendali (Controller)
+## 2. Controllers
 
-Controller menjadi titik masuk utama pengolahan request. Di sinilah validasi, pengecekan hak akses (permission), pemanggilan model/service, dan penentuan response dilakukan.
+Controllers receive request data, validate inputs, check permissions, and delegate the business logic to either inline CRUD or service objects before returning a response.
+
+### Controller Requirements:
+1.  Must inherit from `BaseController` (if using blueprint/magic methods) or be a plain class.
+2.  Methods must be `static` and receive `c: ControllerContext`.
+3.  Must apply permission guards at the beginning of the method.
+4.  Must validate inputs before processing.
 
 ```typescript
-// src/controllers/user/user.controller.ts
-import type { ControllerContext } from 'elysia'
-import { db, permission } from '@utils'
+// app/controllers/iam/user.controller.ts
+import { ControllerContext } from 'elysia'
+import { permission } from '@utils'
 import { User } from '@models'
 
-// Daftarkan permission modul ini
-export const UserPermission = permission.register({
-  '100': {
-    name: 'User Management',
+const p = permission.register({
+  "100": {
+    name: "User Management",
     accesses: {
-      '01': 'View',
-      '02': 'Create',
-      '03': 'Update',
-      '04': 'Delete',
+      "01": "View",
+      "02": "Create"
     }
-  },
+  }
 })
 
 export class UserController {
+  // GET /api/users
   static async index(c: ControllerContext) {
-    // Pengecekan permission
-    UserPermission.have('01').guard(c)
+    p.have("100.01").guard(c)
 
-    // Ambil data menggunakan ORM dan resolve query parameter otomatis
-    const users = await User.query().resolve(c)
-
-    c.responseData(users.data, users.total)
+    // Eager load relations and resolve query automatically
+    const { data, total } = await User.query().resolve(c)
+    c.responseData(data, total)
   }
 
+  // POST /api/users
   static async store(c: ControllerContext) {
-    UserPermission.have('02').guard(c)
+    p.have("100.02").guard(c)
 
-    // Validasi payload request
-    c.validation({
-      name:  'required|string|max:100',
-      email: 'required|email|unique:users,email'
+    await c.validation<User>({
+      name:  ["required", "max:100"],
+      email: ["required", "email"]
     })
 
-    const trx = await db.transaction()
-
-    try {
-      // Menyimpan data beserta relasinya secara otomatis menggunakan .pump()
-      let record = await new User().pump(c.body, { trx })
-      await trx.commit()
-      c.responseSaved(record)
-    } catch (err) {
-      await trx.rollback()
-      c.responseError(err as Error, 'Create User')
-    }
+    const record = await (new User).pump(c.payload)
+    c.responseSaved(record)
   }
 }
 ```
 
 ---
 
-## 3. Model
+## 3. Controller Context (`c`)
 
-Model merepresentasikan tabel atau entity data, mendefinisikan kolom, relasi, dan konfigurasi data.
+The `ControllerContext` extends Elysia's default context with several helper properties and methods:
 
-```typescript
-// src/models/iam/user.model.ts
-import { Model, Field, SoftDelete } from '@utils'
-
-export class User extends Model {
-  static table = "users";
-
-  @Field(['string', 'fillable', 'selectable', 'searchable'])
-  name!: string
-
-  @Field(['string', 'fillable', 'selectable', 'searchable'])
-  email!: string
-
-  @SoftDelete()
-  deleted_at!: Date
-}
-```
-*Catatan untuk Agen: Jaga agar route tidak berisi logika bisnis. Semua proses logika didelegasikan ke controller atau service.*
+*   `c.user`: Contains the authenticated user object (populated by `Middleware.Auth`).
+*   `c.permissions`: Array of permission keys owned by the user (e.g., `["100.01", "100.02"]`).
+*   `c.payload`: The validated and filtered request body.
+*   `c.getQuery`: Parsed query parameters (pagination, filters, search, sorting).

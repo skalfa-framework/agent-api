@@ -1,63 +1,63 @@
-# Panduan Utilitas: Hak Akses & Pengaman (Permission) (`@utils`)
+# Utility Guide: Permissions & RBAC (`permission`)
 
-Utilitas `permission` digunakan untuk mendaftarkan modul fitur beserta hak aksesnya (permissions) dan mengamankan metode di controller menggunakan guard.
+The `permission` utility provides feature-based and access-key-based authorization.
 
 ---
 
-## 1. Pendaftaran Izin (`permission.register`)
+## 1. Registering Permissions
 
-Pendaftaran izin dilakukan di tingkat paling atas berkas controller. Anda mendefinisikan kode fitur 3 digit (`KeyFeature`, misal: `"100"`) dan daftar aksi akses 2 digit (`KeyAccess`, misal: `"01"`, `"02"`).
+Permissions are registered in controllers or config files. Each feature has a unique 3-digit key, and accesses are defined as 2-digit keys.
 
 ```typescript
-import { permission } from "@utils";
+import { permission } from '@utils'
 
 export const UserPermission = permission.register({
-  '100': {
-    name: 'User Management',
+  "100": {
+    name: "User Management",
     accesses: {
-      '01': 'View',
-      '02': 'Create',
-      '03': 'Update',
-      '04': 'Delete',
+      "01": "View",
+      "02": "Create",
+      "03": "Update",
+      "04": "Delete"
     }
-  },
-});
+  }
+})
 ```
 
 ---
 
-## 2. Pengamanan Metode Controller (`guard`)
+## 2. Guarding Endpoints
 
-Gunakan objek permission yang terdaftar untuk mengamankan metode controller. Jika user yang sedang login tidak memiliki hak akses tersebut, guard otomatis memanggil `c.responseForbidden()` dan menghentikan request dengan status `403`.
+Use the `.guard(c)` method at the beginning of controller actions. If the user lacks the required permission, a `403 Forbidden` response is returned immediately.
 
-### A. Pengaman Tunggal (Single Permission)
+### A. Basic Guard
 ```typescript
 static async index(c: ControllerContext) {
-  // Memeriksa izin "100.01" (View)
   UserPermission.have('01').guard(c);
-
-  const users = await User.query().resolve(c);
-  c.responseData(users.data, users.total);
+  
+  // Logic here only runs if user has "100.01" permission
 }
 ```
+*Note: If no feature key is specified, it defaults to the feature key it was registered under (e.g., '01' is normalized to '100.01').*
 
-### B. Pengaman Kombinasi (OR Logic via `orHave`)
-Jika metode dapat diakses apabila pengguna memiliki salah satu dari beberapa izin.
-
+### B. OR Permissions
+Allows access if the user has at least one of the specified permissions:
 ```typescript
-static async store(c: ControllerContext) {
-  // Memeriksa apakah user memiliki izin "100.02" (Create) ATAU "100.03" (Update)
-  UserPermission.have('02').orHave('03').guard(c);
-
-  // Proses simpan...
-}
+UserPermission
+  .have('01')
+  .orHave('02')
+  .guard(c);
 ```
 
-### C. Pengaman Lintas Fitur (Cross-Feature)
-Jika Anda perlu memeriksa izin fitur lain yang tidak terikat pada modul controller saat ini, tuliskan kode izin lengkap dengan pemisah titik (`.`).
+---
+
+## 3. Retrieving Available Permissions
+
+Use these helpers to list all registered features and accesses (e.g., to display in a role management UI):
 
 ```typescript
-// Memeriksa izin modul lain (misal modul "200" akses "01")
-UserPermission.have('200.01').guard(c);
+import { permission } from '@utils'
+
+const features = permission.getFeatures();
+const accesses = permission.getAccesses();
 ```
-*Catatan untuk Agen: Semua pengamanan wajib ditulis di baris pertama di setiap method controller sebelum logika bisnis apa pun dijalankan.*

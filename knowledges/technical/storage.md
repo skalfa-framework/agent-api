@@ -1,83 +1,72 @@
-# Panduan Teknis: Penyimpanan Berkas (Storage)
+# Technical Guide: File Storage (`storage`)
 
-Skalfa API menyediakan utilitas storage untuk menangani unggah (*upload*), penyimpanan, perlindungan hak akses, dan penghapusan file secara terstruktur.
+Skalfa API provides file storage management supporting both public (accessible directly via URL) and private (accessible only with specific permissions) files.
 
 ---
 
-## 1. Mengaktifkan Storage
+## 1. Disks Configuration
 
-Storage diaktifkan dengan memasang plugin/middleware `storage` pada instance Elysia. Ini akan mendaftarkan rute `/storage/*` untuk melayani berkas fisik secara otomatis.
+Files are stored in the `storage/` directory at the project root:
+*   **Public Disk** (`storage/public/`): Files are accessible directly via `/storage/public/...` URLs.
+*   **Private Disk** (`storage/private/`): Files are protected. Accessing them requires matching permission records in the `storages` and `storage_permissions` tables.
+
+---
+
+## 2. Uploading Files (`uploadFile`)
+
+The `uploadFile` helper is available on the `ControllerContext` `c` (or can be imported directly). It handles writing files to disk and optionally registering metadata in the database.
 
 ```typescript
-// src/app.ts
-import { Elysia } from 'elysia'
-import { storage } from '@utils'
+// app/controllers/gallery/photo.controller.ts
+import { ControllerContext } from 'elysia'
 
-export const app = new Elysia().use(storage)
-```
-
----
-
-## 2. Struktur Folder Storage
-
-Berkas disimpan secara fisik di folder `storage` pada root project, yang terbagi menjadi dua jenis penyimpanan:
-
-```text
-storage/
-├─ public/               # Akses bebas tanpa autentikasi (gambar profil, dsb)
-│  └─ avatars/
-└─ private/              # Membutuhkan otorisasi & pengecekan izin khusus
-   └─ invoices/
-```
-
----
-
-## 3. Akses Berkas (Public vs Private)
-
-*   **Public Storage**: File diakses langsung lewat URL:
-    `http://localhost:4000/storage/avatars/image.png`
-*   **Private Storage**: Akses ke `/storage/private/*` akan ditangkap oleh middleware. Middleware akan memeriksa:
-    1.  Apakah pengguna sedang login (`user` terdefinisi).
-    2.  Apakah pengguna adalah pemilik berkas tersebut (`user_id` cocok di tabel `storages`).
-    3.  Apakah pengguna atau role pengguna memiliki izin khusus yang tercatat di tabel `storage_permissions`.
-    *   *Hasil*: Jika tidak memiliki hak akses, server mengembalikan respon `404 File not found` (menyembunyikan keberadaan file demi privasi).
-
----
-
-## 4. Mengunggah Berkas (`uploadFile`)
-
-Unggah dilakukan di controller menggunakan `uploadFile` (atau disuntikkan ke `c.uploadFile`). Metode ini menyimpan file fisik dan mencatat metadatanya ke database.
-
-```typescript
-import { uploadFile } from "@utils";
-
-export class FileController {
+export class PhotoController {
   static async upload(c: ControllerContext) {
+    await c.validation({
+      file: ["required"]
+    })
+
     const file = c.body.file as File;
 
-    // Unggah sebagai berkas privat
-    const path = await uploadFile(file, 'invoices', {
-      disk:        'private',
+    // 1. Upload to public disk under 'photos' folder
+    const publicPath = await c.uploadFile(file, "photos")
+    // Returns: "/photos/abc123xyz.jpg" (URL-ready)
+
+    // 2. Upload to private disk with restricted access
+    const privatePath = await c.uploadFile(file, "invoices", {
+      disk:        "private",
       owner_id:    c.user.id,
       permissions: [
-        { role_id: 1 } // Izinkan Admin melihat invoice ini
+        { role_id: 1 } // Only role ID 1 (Admin) can access
       ]
-    });
+    })
 
-    c.responseSuccess({ path })
+    c.responseSuccess({ publicPath, privatePath })
   }
 }
 ```
 
 ---
 
-## 5. Menghapus Berkas (`deleteFile`)
+## 3. Deleting Files (`deleteFile`)
 
-Menghapus file dari disk fisik dan otomatis membersihkan catatan metadata serta izinnya di database.
+To delete a file from disk and remove its database record, use the `deleteFile` helper:
 
 ```typescript
-import { deleteFile } from "@utils";
+// app/controllers/gallery/photo.controller.ts
+import { ControllerContext } from 'elysia'
 
-// Hapus file fisik & record DB
-await deleteFile('/invoices/abc123xyz.pdf');
+export class PhotoController {
+  static async destroy(c: ControllerContext) {
+    const filePath = "storage/public/photos/abc123xyz.jpg";
+    
+    const deleted = await c.deleteFile(filePath);
+    if (!deleted) {
+      return c.responseError("File not found or failed to delete");
+    }
+
+    c.responseSuccess(null, "File deleted successfully")
+  }
+}
 ```
+*Note: `deleteFile` expects the path from the project root (e.g., `storage/public/photos/filename.jpg`).*

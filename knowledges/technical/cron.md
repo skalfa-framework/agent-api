@@ -1,51 +1,57 @@
-# Panduan Teknis: Tugas Terjadwal (Cron Job)
+# Technical Guide: Scheduled Tasks (`cron`)
 
-Skalfa API menyediakan utilitas cron job untuk menjalankan tugas terjadwal seperti sinkronisasi data, pembersihan cache, pengiriman laporan periodik, atau rekapitulasi data secara otomatis tanpa bergantung pada request HTTP.
+Cron jobs in Skalfa API are used to run background tasks periodically. They are managed via the `cron` utility.
 
 ---
 
-## 1. Mendaftarkan Cron Job (`cron.add`)
+## 1. Defining Cron Jobs
 
-Cron job didefinisikan menggunakan utilitas `cron.add`. Setiap cron wajib memiliki pola jadwal (cron expression), fungsi handler, dan nama unik job untuk keperluan logging.
+Cron jobs are registered in `app/jobs/crons/` and must be imported in the main entry point to start.
 
 ```typescript
-// src/jobs/crons/workers.ts
-import { cron } from '@utils'
-import { BookingService } from '@services'
+// app/jobs/crons/cleanup.cron.ts
+import { cron, db } from '@utils'
 
-// Format: cron.add(scheduleExpression, handler, jobName)
-cron.add('0 0 * * *', async () => {
-  logger.info("Memulai pembersihan transaksi kedaluwarsa...");
-  await BookingService.cleanupExpiredBookings();
-}, 'cleanup-bookings')
-```
-
-### Penjelasan Parameter:
-1.  **Schedule Expression**: Pola standardisasi 5-field cron (Menit, Jam, Hari dari Bulan, Bulan, Hari dari Minggu).
-    *   `'0 0 * * *'` -> Berjalan setiap hari pada pukul 00:00 (tengah malam).
-    *   `'*/5 * * * *'` -> Berjalan setiap 5 menit.
-2.  **Handler**: Fungsi asinkron yang akan dieksekusi sesuai jadwal.
-3.  **Job Name**: Nama unik yang dicatat ke `logger.cron` saat tugas dimulai, sukses, atau gagal.
-
----
-
-## 2. Menjalankan Cron Job
-
-### A. Environment Development
-Pada mode development, cron job otomatis berjalan bersamaan di proses yang sama dengan server API utama saat Anda memicu perintah:
-```bash
-bun dev
-```
-
-### B. Environment Production
-Di environment production, **cron job wajib dijalankan sebagai proses terisolasi** terpisah dari server HTTP utama agar tugas berat tidak memblokir server API.
-```bash
-# Menjalankan worker cron secara mandiri
-bun start:cron
+// Runs every day at midnight
+cron.add("cleanup-expired-tokens", "0 0 * * *", async () => {
+  console.log("🧹 Running token cleanup...");
+  
+  const threshold = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+  await db("personal_access_tokens")
+    .where("last_used_at", "<", threshold)
+    .delete();
+    
+  console.log("✅ Token cleanup completed.");
+})
 ```
 
 ---
 
-## 3. Praktek Terbaik (Best Practice)
-*   **Pisahkan Logika**: Hindari menulis logika bisnis berat langsung di dalam handler cron. Buatlah method di dalam Service Class, lalu panggil method tersebut dari handler cron.
-*   **Gunakan Logging**: Selalu catat log awal dan akhir eksekusi menggunakan `logger.info` atau `logger.cron` untuk memudahkan monitoring berkala.
+## 2. Cron Expression Format
+
+Standard 5-field cron syntax is supported:
+```text
+* * * * *
+│ │ │ │ │
+│ │ │ │ └─ Day of the week (0 - 6) (Sunday to Saturday)
+│ │ │ └─ Month (1 - 12)
+│ │ └─ Day of the month (1 - 31)
+│ └─ Hour (0 - 23)
+└─ Minute (0 - 59)
+```
+
+Common intervals:
+*   `*/5 * * * *`: Every 5 minutes.
+*   `0 * * * *`: Every hour.
+*   `0 0 * * *`: Every day at midnight.
+*   `0 0 * * 0`: Every Sunday at midnight.
+
+---
+
+## 3. Execution Environment
+
+*   **Development**: Cron jobs run in the same process as the main server when starting with `npm run dev`.
+*   **Production**: In production, it is recommended to run cron jobs in a separate worker process using a dedicated command to avoid blocking the main HTTP thread:
+    ```bash
+    bun run app/jobs/crons/workers.ts
+    ```
