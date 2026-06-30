@@ -20,6 +20,7 @@ Before creating any implementation plan (`Stage 1 — Planning`), the agent **MU
 
 ## 2. Core Utilities
 
+*   [CLI Blueprint](file:///d:/_skalfa/agent-api/knowledges/utilities/blueprint.md): Defining schemas, relations, seeders, and generating models/controllers/migrations.
 *   [ORM & Model](file:///d:/_skalfa/agent-api/knowledges/utilities/orm.md): Model definition, `@Field`, `@SoftDelete`, `@Attribute` decorators, relations, model hooks, relation filtering (`whereHas`), and filter operators.
 *   [Controller Utility](file:///d:/_skalfa/agent-api/knowledges/utilities/controller.md): Extracting query parameters with `c.getQuery`, validating payloads with `c.validation`, and sending standard responses (`c.responseData`, `c.responseSaved`, etc.).
 *   [Validation Rules](file:///d:/_skalfa/agent-api/knowledges/utilities/validation.md): How to trigger validation and the list of supported validation rules in Skalfa.

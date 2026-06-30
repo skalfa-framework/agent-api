@@ -75,12 +75,22 @@ All detailed logs, plans, and code diffs must be stored as separate files in `./
 
 ## STAGE 2 — IMPLEMENTATION
 
-### Step 2.1 — Code Generation (skalfa-cli)
-*   If creating new controllers, models, or routes, use the `skalfa-cli` tool first to generate the boilerplate:
+### Step 2.1 — Code Generation & Scaffolding
+*   **Prioritize Blueprint**: If the feature is a basic CRUD resource, define the schema in `blueprints/<name>.blueprint.json` and run the generator command:
     ```bash
-    skalfa make:controller <name>
+    bun skalfa blueprint
     ```
-*   Ensure auto-generated headers are preserved if the file should not be manually overridden completely.
+*   **Alternative Scaffolding**: If Blueprint is not used (or if the user requests not to), use `skalfa-cli` to generate components:
+    *   To generate a full CRUD resource (controller + model + migration):
+        ```bash
+        skalfa make:resource <name>
+        ```
+    *   To generate individual components:
+        ```bash
+        skalfa make:skalfa-controller <name>
+        skalfa make:skalfa-model <name>
+        ```
+*   Ensure auto-generated headers are preserved if the file is managed by the Blueprint engine.
 
 ### Step 2.2 — Manual Coding
 *   Implement business logic **exclusively** inside service objects placed in the `_services/` subdirectory of the controller (e.g., `app/controllers/<module>/_services/<slug>.service.ts`).
