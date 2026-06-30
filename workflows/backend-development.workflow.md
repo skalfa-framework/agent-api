@@ -45,6 +45,7 @@ All detailed logs, plans, and code diffs must be stored as separate files in `./
 *   The agent MUST read the project's root `README.md` to understand the overall project outline, architecture, and business rules.
 *   Verify how the requested feature fits into the existing modules and outline described in `README.md`.
 *   **Knowledge Mapping**: The agent MUST read the Knowledge Registry in `./.agent/knowledges/registry.md`. Identify and read ONLY the specific knowledge files (e.g., `validation.md`, `orm.md`) that are directly relevant to the database models, APIs, and utilities required for the task. Reading unrelated knowledge files is forbidden to prevent context bloat.
+*   **Feature Spec Alignment**: If modifying or extending an existing feature, the agent **MUST** check for and read `./.agent/records/features/<feature-slug>.md` to understand the previous implementation details, business logic, and design rationale.
 
 
 ### Step 1.2 — Requirement Analysis & Clarification (Ask if Unclear)
@@ -145,6 +146,12 @@ For every new or modified feature, the agent MUST write and execute a runtime te
     *   Patch: `./.agent/records/activities/act-<num>-diff-<feature>.patch`
 
 ### Step 5.2 — Ledger Finalization
+*   **Feature Spec Update**: Create (for new features) or update (for modified features) the feature specification file at `./.agent/records/features/<feature-slug>.md` using the standard template:
+    *   **Goal & Purpose**: Why was the feature created?
+    *   **Technical Architecture & Components**: List of Models, Controllers/Routes, and Services/Hooks.
+    *   **Business Logic & Flow**: Step-by-step execution flow and validation/permission guards.
+    *   **Key Design Decisions & Rationale**: Rationale behind technical choices.
+    *   **Verification & Testing**: Test files and scenarios executed.
 *   Run the API documentation generator command `bun skalfa generate:docs --path=<route_path>` (e.g., `--path=/users`) to automatically update the API documentation in the `./docs/` folder for the newly created/modified endpoints.
 *   Record the completion event in `ledger.jsonl`:
     ```json
