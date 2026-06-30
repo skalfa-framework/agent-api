@@ -175,6 +175,10 @@ Readability and structural consistency are more important than brevity.
 
 If a fix requires changes inside read-only paths, the agent MUST NOT modify the file, but must report it to the human as `fix_but_need_human`.
 
+### 7.3 README.md Modification Constraints
+*   The agent is allowed to add new features to the checklist in `README.md` (e.g., adding `- [ ] New Feature` when planning).
+*   **The agent MUST NOT mark any checklist items as completed (changing `[ ]` to `[x]`) in `README.md`.** Checking or marking the status of features in the `README.md` checklist is reserved exclusively for humans.
+
 ---
 
 ## 8. Definition of DONE
