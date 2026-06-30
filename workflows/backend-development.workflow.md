@@ -47,10 +47,17 @@ All detailed logs, plans, and code diffs must be stored as separate files in `./
 *   **Knowledge Mapping**: The agent MUST read the Knowledge Registry in `./.agent/knowledges/registry.md`. Identify and read ONLY the specific knowledge files (e.g., `validation.md`, `orm.md`) that are directly relevant to the database models, APIs, and utilities required for the task. Reading unrelated knowledge files is forbidden to prevent context bloat.
 
 
-### Step 1.2 — Outline Adjustment (If Applicable)
+### Step 1.2 — Requirement Analysis & Clarification (Ask if Unclear)
+*   The agent **MUST** analyze the user prompt and `README.md` to identify any ambiguities, missing details, or gaps in requirements (e.g., specific database fields, business logic rules, edge cases, or integration points).
+*   If any requirements are unclear or underspecified, the agent **MUST** write a list of clarifying questions:
+    *   Ask the user directly in the chat, OR
+    *   List them under the `## Open Questions` section in the implementation plan.
+*   **Do not make blind assumptions** on critical business rules or database schemas without seeking user confirmation.
+
+### Step 1.3 — Outline Adjustment (If Applicable)
 *   If the requested feature introduces changes, adjustments, or deviations from the existing project outline, the agent MUST update the corresponding sections in `README.md` (or draft the proposed updates) to keep the project outline accurate.
 
-### Step 1.3 — Plan Creation & Detailing
+### Step 1.4 — Plan Creation & Detailing
 *   Based on the project outline in `README.md`, define:
     *   Affected API endpoints (method, path)
     *   Request schema (params, query, body) and validation rules

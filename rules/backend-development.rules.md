@@ -19,6 +19,7 @@ Before creating any plan (such as `implementation_plan.md`) or performing any co
 *   The agent **MUST** read the local Knowledge Registry at `./.agents/knowledges/registry.md` to understand the available technical services and utilities.
 *   Identify which specific utilities (e.g. ORM, Controller, Validation, Permission, Auth) or technical services (e.g. Database, Storage, Email, Queue) are required for the task.
 *   The agent **MUST** open and read those specific knowledge files in `./.agents/knowledges/` **BEFORE** exploring the codebase or proposing any changes. This prevents unnecessary codebase searches and ensures alignment with Skalfa API patterns.
+*   **Clarification & No-Assumptions**: If the user prompt or the project's `README.md` is ambiguous, incomplete, or lacks specific details (such as database column names/types, validation rules, or business logic edge cases), the agent **MUST NOT** make silent assumptions. The agent **MUST** ask the user for clarification directly in the chat or list the questions under the `## Open Questions` section of the implementation plan and wait for feedback.
 
 ---
 
