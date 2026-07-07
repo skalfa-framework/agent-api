@@ -35,7 +35,7 @@ If a bug fix violates these rules $\rightarrow$ **the fix MUST NOT be considered
 For every reported backend runtime bug:
 
 ### 2.1 Test File Placement & Naming
-*   The test file MUST be placed in `.agent/test/<slug>.test.ts`.
+*   The test file MUST be placed in `.agents/test/<slug>.test.ts`.
 *   The file name must match the slug of the feature being debugged.
 
 ### 2.2 Mandatory Test Scenarios
@@ -63,12 +63,12 @@ Each test file MUST cover:
 ### 3.2 Runtime Verification
 *   Run the test file:
     ```bash
-    bun .agent/test/<slug>.test.ts
+    bun .agents/test/<slug>.test.ts
     ```
 *   The fix is only valid when **all scenarios** in the test file pass.
 
 ### 3.3 Event Recording
-*   Every bug lifecycle transition must be recorded in `.agent/records/ledger.jsonl`:
+*   Every bug lifecycle transition must be recorded in `.agents/records/ledger.jsonl`:
     *   On reproduction: Record `BUG_FOUND`.
     *   On resolution: Record `BUG_RESOLVED`.
-*   Update `.agent/records/state.json` to reflect the active/resolved bugs.
+*   Update `.agents/records/state.json` to reflect the active/resolved bugs.

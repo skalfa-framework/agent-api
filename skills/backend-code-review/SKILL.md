@@ -46,8 +46,8 @@ Detect and resolve files, folders, and code patterns that violate Skalfa API con
     *   Adjust spacing to enforce vertical alignment.
     *   Refactor controllers to extract business logic into services.
 4.  **Report**:
-    *   Create a review report: `.agent/records/activities/act-xxx-review-report.md`.
-    *   Record the `CODE_REVIEW_COMPLETED` event in `.agent/records/ledger.jsonl`.
+    *   Create a review report: `.agents/records/activities/act-xxx-review-report.md`.
+    *   Record the `CODE_REVIEW_COMPLETED` event in `.agents/records/ledger.jsonl`.
 
 ## Forbidden Actions
 *   Changing functional feature behavior during refactoring.

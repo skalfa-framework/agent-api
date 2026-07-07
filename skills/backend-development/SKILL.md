@@ -18,14 +18,14 @@ Implement backend code strictly according to the approved implementation plan, S
     ```bash
     bun tsc --noEmit
     ```
-*   Write and run test files under `.agent/test/` using Bun:
+*   Write and run test files under `.agents/test/` using Bun:
     ```bash
     bun .agent/test/<slug>.test.ts
     ```
 
 ## Step-by-Step Instructions
 
-1.  **Read the Plan**: Open the latest planning file in `.agent/records/activities/act-xxx-plan-xxx.md`.
+1.  **Read the Plan**: Open the latest planning file in `.agents/records/activities/act-xxx-plan-xxx.md`.
 2.  **Generate Boilerplate**: If new controllers or models are required, run `skalfa-cli` to generate them. Do not write boilerplate from scratch.
 3.  **Implement Service Logic**:
     *   For complex or long operations, put business logic inside service objects under `app/controllers/<module>/_services/<slug>.service.ts`.
@@ -33,8 +33,8 @@ Implement backend code strictly according to the approved implementation plan, S
     *   Name the service file using slug-like format.
 4.  **Format Code**: Apply vertical alignment to object keys (`: `) and variable assignments (`= `) in the block. Keep imports and function calls on a single line unless excessively long.
 5.  **Verify Statics**: Run `bun tsc --noEmit` in the project root. Resolve any compiler errors immediately.
-6.  **Verify Runtimes**: Create and run a test file in `.agent/test/<slug>.test.ts` using Bun. Ensure it passes multiple scenarios.
-7.  **Record Activities**: Save the code diff patch and explanation in `.agent/records/activities/`, and append the `FEATURE_COMPLETED` event to `.agent/records/ledger.jsonl`.
+6.  **Verify Runtimes**: Create and run a test file in `.agents/test/<slug>.test.ts` using Bun. Ensure it passes multiple scenarios.
+7.  **Record Activities**: Save the code diff patch and explanation in `.agents/records/activities/`, and append the `FEATURE_COMPLETED` event to `.agents/records/ledger.jsonl`.
 
 ## Forbidden Actions
 *   Modifying files in read-only paths (such as `utils/**` or `app/app.ts`).
