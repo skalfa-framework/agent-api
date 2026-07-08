@@ -27,7 +27,7 @@ The agent MUST use runtime tests as the primary observation and verification too
 *   Check `./.agent.tools/test/` for an existing test file for this feature (e.g., `./.agent.tools/test/<slug>.test.ts`).
 *   If no relevant test file exists, create a new one:
     *   File Path: `./.agent.tools/test/<slug>.test.ts`
-    *   Test Content: Write multiple scenarios (happy path, invalid input, auth, edge case, and a scenario reproducing the reported runtime failure).
+    *   Test Content: Write multiple scenarios (happy path, invalid input, auth, edge case, and a scenario reproducing the reported runtime failure) using the `bun:test` runner (consistently importing `describe`, `test`, `expect`, `beforeAll`, `afterAll` from `"bun:test"`). Raw scripts are not allowed.
     *   Queue/Event Simulation: Trigger the queue jobs or event handlers directly inside the test code.
 
 ### Step 1.2 — Execution & Capture

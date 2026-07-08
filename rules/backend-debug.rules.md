@@ -37,6 +37,7 @@ For every reported backend runtime bug:
 ### 2.1 Test File Placement & Naming
 *   The test file MUST be placed in `.agent.tools/test/<slug>.test.ts`.
 *   The file name must match the slug of the feature being debugged.
+*   The test file MUST consistently import and use testing functions/assertions from `bun:test` (e.g., `import { describe, test, expect, beforeAll, afterAll } from "bun:test"`). Running tests as raw scripts without standard `bun:test` structure or proper assertions is strictly forbidden.
 
 ### 2.2 Mandatory Test Scenarios
 Each test file MUST cover:

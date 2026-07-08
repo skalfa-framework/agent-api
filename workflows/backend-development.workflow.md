@@ -122,6 +122,7 @@ Before running the code, the agent MUST verify that it passes static analysis:
 For every new or modified feature, the agent MUST write and execute a runtime test:
 *   **Test File**: Create a test file in `./.agent.tools/test/<slug>.test.ts`.
 *   **Test Content**: 
+    *   MUST consistently import and use testing functions and assertions from `bun:test` (e.g., `import { describe, test, expect, beforeAll, afterAll } from "bun:test"`). Raw scripting without structured blocks and assertions is forbidden.
     *   Simulate real API calls using Bun.
     *   Simulate queue/event background jobs by invoking their triggers directly in the test file.
     *   Implement **multiple scenarios** with different inputs (happy path, invalid input, unauthorized access, edge cases).

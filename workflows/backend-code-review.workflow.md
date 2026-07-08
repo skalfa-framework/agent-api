@@ -35,6 +35,7 @@ The reviewer agent MUST analyze all modified and new files against the following
 *   Controller files MUST be named using a **slug-like** format with the `.controller.ts` suffix (e.g., `auth.controller.ts`).
 *   Model files MUST be named using a **slug-like** format with the `.model.ts` suffix (e.g., `user.model.ts`).
 *   Route files MUST be named using a **slug-like** format with the `.routes.ts` suffix (e.g., `base.routes.ts`).
+*   **Table & Model Naming (Module Prefixing)**: Verify that models and database tables always use the corresponding module name as a prefix (e.g., instead of `stock` or `stock_adjustment` under the `product` module, they must be named `product_stock` and `product_stock_adjustment`).
 
 ### 3. Coding Patterns
 *   **Database Queries**: MUST use the Active Record pattern via `Model.query()` (e.g., `User.query().where(...)`).
@@ -43,6 +44,7 @@ The reviewer agent MUST analyze all modified and new files against the following
 *   **Validation**: Validation MUST be executed inside the controller using `await c.validation({ ... })` before processing.
 *   **Permissions**: Permissions MUST be registered using `permission.register({ ... })` and guarded in controller methods using `p.have("xxx.yy").guard(c)`.
 *   **Route Setup**: CRUD routes should be mapped using the `api(route, "name", Controller)` helper.
+*   **Testing**: Test files MUST consistently import and use testing functions and assertions from `bun:test` (e.g., `import { describe, test, expect, beforeAll, afterAll } from "bun:test"`). Raw scripts or console-based checks in test files are forbidden.
 
 ### 4. Code Formatting (Vertical Alignment)
 *   Object keys, variable assignments, and type definitions MUST be aligned vertically in block form (column-based alignment using spaces).

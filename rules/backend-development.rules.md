@@ -64,6 +64,9 @@ Readability and structural consistency are more important than brevity.
     *   *Correct*: `app/models/iam/user.model.ts`
 *   **Route Files**: MUST use slug-like naming with the `.routes.ts` suffix.
     *   *Correct*: `app/routes/base.routes.ts`
+*   **Table & Model Naming (Module Prefixing)**: Models and database tables MUST always use the corresponding module name as a prefix.
+    *   *Correct*: If the module is `product`, the model and table name must be `product`, and any sub-tables or related tables/models within that module must also be prefixed with it, e.g., `product_stock`, `product_stock_adjustment`.
+    *   *Incorrect*: `stock`, `stock_adjustment` (lacking the `product` module prefix).
 
 ---
 
@@ -128,6 +131,14 @@ Readability and structural consistency are more important than brevity.
 *   Skalfa API provides a rich set of built-in utilities (e.g., `api`, `middleware`, `auth`, `db`, `permission`, `queue`, `redis`, `socket`, `storage`, `validation`, `cron`, `mail`, `da`) via the `@utils` path alias.
 *   The agent MUST reuse these existing utilities. Writing custom helper functions or reinventing logic (like custom db wrappers, manual file upload handlers, or custom validation engines) is strictly forbidden.
 *   Do not casually create custom utility files.
+
+### 4.5 Test Writing Rules (bun:test)
+*   All test files under `.agent.tools/test/` MUST consistently use the `bun:test` runner and testing functions.
+*   The test file MUST import test blocks and assertions directly from `bun:test`:
+    ```typescript
+    import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+    ```
+*   Writing tests as raw scripts without using standard `bun:test` structure or assertions (e.g., relying only on console logs or throw statement blocks instead of `expect`) is strictly forbidden.
 
 ---
 

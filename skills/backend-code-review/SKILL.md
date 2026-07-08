@@ -21,9 +21,10 @@ Detect and resolve files, folders, and code patterns that violate Skalfa API con
     *   Services must be in `_services/` inside either the controller or model module folder.
         *   Controller-level: `app/controllers/<module>/_services/`
         *   Model-level: `app/models/<module>/_services/` (must be registered inside the model file).
-2.  **File Naming (Slug-like)**:
+2.  **File Naming (Slug-like) & Module Prefixing**:
     *   Verify all files use slug-like names (e.g., `user-registration.service.ts`, `auth.controller.ts`).
     *   No camelCase or PascalCase file names are allowed in the modified scope.
+    *   Verify that models and database tables always use the corresponding module name as a prefix (e.g., instead of `stock` or `stock_adjustment` under the `product` module, use `product_stock` and `product_stock_adjustment`).
 3.  **Service Responsibility**:
     *   Ensure all business logic is delegated to service objects.
     *   Controllers must only handle input validation, permissions, and response formatting.
@@ -32,6 +33,7 @@ Detect and resolve files, folders, and code patterns that violate Skalfa API con
     *   Verify updates/saves use `.pump(...)`.
     *   Verify permissions use `permission.register` and `p.have().guard(c)`.
     *   Verify model relations use decorators (e.g. `@BelongsTo`) instead of `static relations` attributes.
+    *   Verify test files consistently import and use testing functions and assertions from `bun:test`.
 5.  **Code Formatting (Vertical Alignment & Imports)**:
     *   Ensure colons (`:`) in object declarations and equals signs (`=`) in variable assignments are vertically aligned.
     *   Verify all import statements are written on a single line (no multi-line wrapping).
