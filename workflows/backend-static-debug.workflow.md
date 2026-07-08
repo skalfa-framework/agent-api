@@ -15,7 +15,7 @@ The agent MUST rely on the TypeScript compiler as the source of truth for static
 
 *   **Backend Project Root**: `./skalfa-api/` (or current project folder containing `app/`)
 *   **Agent Folder**: `./.agents/`
-*   **Records Directory**: `./.agents/records/`
+*   **Records Directory**: `./.agent.tools/records/`
 
 ---
 
@@ -32,10 +32,10 @@ The agent MUST rely on the TypeScript compiler as the source of truth for static
 *   Extract the file paths, line numbers, error codes, and messages.
 *   Filter out any errors in read-only directories (e.g., `utils/`). If errors exist in read-only paths, flag them as `need_human`.
 *   If static errors are found:
-    *   Create a static error report: `./.agents/records/activities/act-<num>-static-errors.md`.
-    *   Record the `STATIC_ERRORS_FOUND` event in `./.agents/records/ledger.jsonl`:
+    *   Create a static error report: `./.agent.tools/records/activities/act-<num>-static-errors.md`.
+    *   Record the `STATIC_ERRORS_FOUND` event in `./.agent.tools/records/ledger.jsonl`:
         ```json
-        {"timestamp": "TIMESTAMP", "agent": "AGENT_NAME", "event": "STATIC_ERRORS_FOUND", "payload": {"report_file": "./.agents/records/activities/act-<num>-static-errors.md"}}
+        {"timestamp": "TIMESTAMP", "agent": "AGENT_NAME", "event": "STATIC_ERRORS_FOUND", "payload": {"report_file": "./.agent.tools/records/activities/act-<num>-static-errors.md"}}
         ```
 
 ---
@@ -58,8 +58,8 @@ The agent MUST rely on the TypeScript compiler as the source of truth for static
 
 ### Step 2.3 — Record Resolution
 *   Once all compiler errors are resolved:
-    *   Create a resolution report: `./.agents/records/activities/act-<num>-static-resolved.md`.
-    *   Record the `STATIC_ERRORS_RESOLVED` event in `./.agents/records/ledger.jsonl`:
+    *   Create a resolution report: `./.agent.tools/records/activities/act-<num>-static-resolved.md`.
+    *   Record the `STATIC_ERRORS_RESOLVED` event in `./.agent.tools/records/ledger.jsonl`:
         ```json
-        {"timestamp": "TIMESTAMP", "agent": "AGENT_NAME", "event": "STATIC_ERRORS_RESOLVED", "payload": {"resolution_file": "./.agents/records/activities/act-<num>-static-resolved.md"}}
+        {"timestamp": "TIMESTAMP", "agent": "AGENT_NAME", "event": "STATIC_ERRORS_RESOLVED", "payload": {"resolution_file": "./.agent.tools/records/activities/act-<num>-static-resolved.md"}}
         ```

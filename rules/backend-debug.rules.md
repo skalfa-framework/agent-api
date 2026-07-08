@@ -17,7 +17,7 @@ If a bug fix violates these rules $\rightarrow$ **the fix MUST NOT be considered
 
 ### 1.1 Reproduce First
 *   Do NOT attempt to fix a bug before reproducing it.
-*   The primary tool for reproduction is a **runtime test** located in `.agent/test/`.
+*   The primary tool for reproduction is a **runtime test** located in `.agent.tools/test/`.
 
 ### 1.2 Minimal Scoped Fixes
 *   Fixes MUST be as small as possible.
@@ -35,7 +35,7 @@ If a bug fix violates these rules $\rightarrow$ **the fix MUST NOT be considered
 For every reported backend runtime bug:
 
 ### 2.1 Test File Placement & Naming
-*   The test file MUST be placed in `.agents/test/<slug>.test.ts`.
+*   The test file MUST be placed in `.agent.tools/test/<slug>.test.ts`.
 *   The file name must match the slug of the feature being debugged.
 
 ### 2.2 Mandatory Test Scenarios
@@ -63,12 +63,12 @@ Each test file MUST cover:
 ### 3.2 Runtime Verification
 *   Run the test file:
     ```bash
-    bun .agents/test/<slug>.test.ts
+    bun .agent.tools/test/<slug>.test.ts
     ```
 *   The fix is only valid when **all scenarios** in the test file pass.
 
 ### 3.3 Event Recording
-*   Every bug lifecycle transition must be recorded in `.agents/records/ledger.jsonl`:
+*   Every bug lifecycle transition must be recorded in `.agent.tools/records/ledger.jsonl`:
     *   On reproduction: Record `BUG_FOUND`.
     *   On resolution: Record `BUG_RESOLVED`.
-*   Update `.agents/records/state.json` to reflect the active/resolved bugs.
+*   Update `.agent.tools/records/state.json` to reflect the active/resolved bugs.

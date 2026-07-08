@@ -20,7 +20,7 @@ Before creating any plan (such as `implementation_plan.md`) or performing any co
 *   Identify which specific utilities (e.g. ORM, Controller, Validation, Permission, Auth) or technical services (e.g. Database, Storage, Email, Queue) are required for the task.
 *   The agent **MUST** open and read those specific knowledge files in `./.agents/knowledges/` **BEFORE** exploring the codebase or proposing any changes. This prevents unnecessary codebase searches and ensures alignment with Skalfa API patterns.
 *   **Clarification & No-Assumptions**: If the user prompt or the project's `README.md` is ambiguous, incomplete, or lacks specific details (such as database column names/types, validation rules, or business logic edge cases), the agent **MUST NOT** make silent assumptions. The agent **MUST** ask the user for clarification directly in the chat or list the questions under the `## Open Questions` section of the implementation plan and wait for feedback.
-*   **Feature Specification Alignment**: If the task involves modifying or extending an existing feature, the agent **MUST** check for and read the corresponding feature specification file in `./.agents/records/features/<feature-slug>.md` to understand the existing design, architecture, and business rules before proposing any changes.
+*   **Feature Specification Alignment**: If the task involves modifying or extending an existing feature, the agent **MUST** check for and read the corresponding feature specification file in `./.agent.tools/records/features/<feature-slug>.md` to understand the existing design, architecture, and business rules before proposing any changes.
 
 ---
 
@@ -101,6 +101,20 @@ Readability and structural consistency are more important than brevity.
 ### 4.3 Data Access & Active Record
 *   Database operations MUST use the Active Record pattern via `Model.query()`.
 *   Writing raw queries scattered across controllers is forbidden.
+*   **Model Relations**:
+    *   Relations between models MUST be declared using relation decorators (e.g., `@BelongsTo`, `@HasOne`, `@HasMany`, etc.) with an arrow function returning the model:
+        ```typescript
+        product_id!: number
+        @BelongsTo(() => Product)
+        product!: Product;
+        ```
+    *   Do NOT use static attributes to define relations:
+        ```typescript
+        // FORBIDDEN
+        static relations  =  {
+            product    :  () => ({ model: Product }),
+        }
+        ```
 *   Data saving and updating MUST use the `.pump(...)` method:
     ```typescript
     // Creating
@@ -174,8 +188,8 @@ Readability and structural consistency are more important than brevity.
 *   `app/jobs/**`
 *   `app/outputs/**`
 *   `database/**`
-*   `.agents/records/**`
-*   `.agents/test/**`
+*   `.agent.tools/records/**`
+*   `.agent.tools/test/**`
 
 ### 7.2 Read-Only Paths (agent MUST NOT modify)
 *   `utils/**`
@@ -198,7 +212,7 @@ A backend task is considered **DONE** only when:
 4.  All database operations use `Model.query()` and `.pump()`.
 5.  Code formatting is vertically aligned.
 6.  The TypeScript compiler check (`bun tsc --noEmit`) passes with 0 errors.
-7.  A test file in `.agents/test/<slug>.test.ts` is created, executed via Bun, and all scenarios pass.
+7.  A test file in `.agent.tools/test/<slug>.test.ts` is created, executed via Bun, and all scenarios pass.
 8.  The API documentation is updated by running the `bun skalfa generate:docs --path=<route_path>` command for the newly created or modified API endpoints.
-9.  The ledger (`.agents/records/ledger.jsonl`) and state (`.agents/records/state.json`) are updated.
-10. The feature specification file in `./.agents/records/features/<feature-slug>.md` is created (for new features) or updated (for modified features) using the standard template to document the implementation details and decisions.
+9.  The ledger (`.agent.tools/records/ledger.jsonl`) and state (`.agent.tools/records/state.json`) are updated.
+10. The feature specification file in `./.agent.tools/records/features/<feature-slug>.md` is created (for new features) or updated (for modified features) using the standard template to document the implementation details and decisions.

@@ -31,6 +31,7 @@ Detect and resolve files, folders, and code patterns that violate Skalfa API con
     *   Verify queries use `Model.query()`.
     *   Verify updates/saves use `.pump(...)`.
     *   Verify permissions use `permission.register` and `p.have().guard(c)`.
+    *   Verify model relations use decorators (e.g. `@BelongsTo`) instead of `static relations` attributes.
 5.  **Code Formatting (Vertical Alignment & Imports)**:
     *   Ensure colons (`:`) in object declarations and equals signs (`=`) in variable assignments are vertically aligned.
     *   Verify all import statements are written on a single line (no multi-line wrapping).
@@ -46,8 +47,8 @@ Detect and resolve files, folders, and code patterns that violate Skalfa API con
     *   Adjust spacing to enforce vertical alignment.
     *   Refactor controllers to extract business logic into services.
 4.  **Report**:
-    *   Create a review report: `.agents/records/activities/act-xxx-review-report.md`.
-    *   Record the `CODE_REVIEW_COMPLETED` event in `.agents/records/ledger.jsonl`.
+    *   Create a review report: `.agent.tools/records/activities/act-xxx-review-report.md`.
+    *   Record the `CODE_REVIEW_COMPLETED` event in `.agent.tools/records/ledger.jsonl`.
 
 ## Forbidden Actions
 *   Changing functional feature behavior during refactoring.

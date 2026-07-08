@@ -15,7 +15,7 @@ The workflow ensures that the codebase conforms to Skalfa folder structures, slu
 
 *   **Backend Project Root**: `./skalfa-api/` (or current project folder containing `app/`)
 *   **Agent Folder**: `./.agents/`
-*   **Records Directory**: `./.agents/records/`
+*   **Records Directory**: `./.agent.tools/records/`
 
 ---
 
@@ -39,6 +39,7 @@ The reviewer agent MUST analyze all modified and new files against the following
 ### 3. Coding Patterns
 *   **Database Queries**: MUST use the Active Record pattern via `Model.query()` (e.g., `User.query().where(...)`).
 *   **Data Saving/Updating**: MUST use the `.pump(...)` pattern (e.g., `await record.pump(payload)`).
+*   **Model Relations**: MUST declare relations using decorators (e.g., `@BelongsTo(() => Product)`) and MUST NOT use the `static relations` attribute.
 *   **Validation**: Validation MUST be executed inside the controller using `await c.validation({ ... })` before processing.
 *   **Permissions**: Permissions MUST be registered using `permission.register({ ... })` and guarded in controller methods using `p.have("xxx.yy").guard(c)`.
 *   **Route Setup**: CRUD routes should be mapped using the `api(route, "name", Controller)` helper.
@@ -73,8 +74,8 @@ The reviewer agent MUST analyze all modified and new files against the following
 *   Verify that these changes do NOT alter the functional behavior of the feature.
 
 ### Step 1.3 — Finalize Review Report
-*   Create a code review report: `./.agents/records/activities/act-<num>-review-report.md`.
-*   Record the `CODE_REVIEW_COMPLETED` event in `./.agents/records/ledger.jsonl`:
+*   Create a code review report: `./.agent.tools/records/activities/act-<num>-review-report.md`.
+*   Record the `CODE_REVIEW_COMPLETED` event in `./.agent.tools/records/ledger.jsonl`:
     ```json
-    {"timestamp": "TIMESTAMP", "agent": "AGENT_NAME", "event": "CODE_REVIEW_COMPLETED", "payload": {"report_file": "./.agents/records/activities/act-<num>-review-report.md"}}
+    {"timestamp": "TIMESTAMP", "agent": "AGENT_NAME", "event": "CODE_REVIEW_COMPLETED", "payload": {"report_file": "./.agent.tools/records/activities/act-<num>-review-report.md"}}
     ```
